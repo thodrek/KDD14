@@ -1,4 +1,33 @@
 \documentclass{sig-alternate}
+\usepackage{cleveref}
+\usepackage{algorithm}
+\usepackage{times}
+\usepackage{color}
+\usepackage{url}
+\usepackage{subfigure}
+\usepackage{xspace}
+\usepackage[noend]{algorithmic}
+\usepackage{enumerate}
+\usepackage{multirow}
+\usepackage{balance} 
+\usepackage{epstopdf}
+
+\newcommand{\squishlist}{
+   \begin{list}{$\bullet$}
+    {
+      \setlength{\itemsep}{0pt}
+      \setlength{\parsep}{3pt}
+      \setlength{\topsep}{3pt}
+      \setlength{\partopsep}{0pt}
+      \setlength{\leftmargin}{1.5em}
+      \setlength{\labelwidth}{1em}
+      \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+    \end{list}  }
+
+
+\newcommand{\model}{{SLT2}\xspace} %seer
 
 \begin{document}
 
@@ -64,42 +93,34 @@ In this paper, we introduce a spatio-temporal topic model over data sources that
 % A category with the (minimum) three required fields
 \category{I.2.6}{Artificial Intelligence}{Learning}
 %A category including the fourth, optional field follows...
-\category{H.2.8}{Database Management}{Database Applications}[data mining]
+\category{H.2.8}{Database Management}{Database Applications}[data mining] 
 
 \terms{Algorithms, Experimentation}
 
 \keywords{Graphical Models, Data Integration, Temporal Analysis, Topic Models}
 
 \section{Introduction}
+\label{sec:intro}
 There has been a growing interest in developing statistical models for detecting infectious diseases as they arise, in a sufficiently timely fashion to enable effective control measures to be taken. Most of the early approaches targeted specific diseases and relied on highly specialized data, including medical records or environmental time series~\cite{wong:02,wong:03}.  Recently, however, there has been a growing interest in monitoring disease outbreaks using publicly available data on the Web, including news articles~\cite{brownstein:2008,linge:09}, blogs~\cite{corley:10}, search engine logs~\cite{ginsberg:09} and micro-blogging services, such as Twitter~\cite{culotta:2010}. Due to their volume, ease of availability, and ``citizen participation", such ``open source indicators" have been shown to be quite effective at monitoring disease emergence and progression.
 
-Most of the proposed techniques rely on identifying specific keywords related to the diseases under consideration and try to detect anomalous patterns over time with respect to the mention frequency of these keywords. While effective at detecting outbreaks of common diseases, such as influenza, the above techniques have significant limitations at predicting outbreaks of {\em rare}, yet deadly, diseases, such as Hantavirus. The main reason is the rare incidences of the aforementioned type of diseases. In particular, due to the limited mentions of rare disease 
+Most of the proposed techniques rely on identifying specific keywords related to a set of predefined diseases and try to detect anomalous patterns over time with respect to the mention frequency of these keywords. While effective at detecting outbreaks of common diseases, such as influenza, the above techniques have significant limitations at predicting outbreaks of {\em rare}, yet deadly, diseases, such as Hantavirus. Since rare disease incidences are scarce, related keywords are sparsely distributed over time. Thus, it difficult for keyword based techniques to identify temporal patterns, and hence, detect the emergence of an outbreak in a timely manner. To address this limitation, researchers have employed models that identify temporal trends over {\em groups of words}, such as temporal topic models~\cite{paul:11} or frequent word-set mining~\cite{parker:13}. Both approaches rely on detecting co-occurence patterns of sets of words over time to discover the emergence and track the evolution of diseases. 
 
-In particular, since the incidences of rare diseases are sparse over time focusing only on specific keywords may not provide sufficient data to detect the emergence of an outbreak in the future. Detecting co-occurence patterns of groups of words over time 
+All of the aforementioned approaches are mainly used to detect generic disease trends and do not focus on location specific trends. However, rare disease topics may follow significantly different patterns when considering different locations. For example, Hantavirus outbreaks are more prominent in the Americas as opposed to Europe, and more notably, the rate of outbreaks across countries in the Americas varies significantly~\cite{jonsson:10}. Thus, not modeling the spatial correlations among disease outbreaks can confound outbreak patterns and result in unclear and sub-optimal location specific outbreak predictions. 
 
- they fail to detect co-occurence patterns amongst groups of words that if exploited may lead 
+Finally, when analyzing publicly available data from multiple sources, it is of high-importance to consider the source lineage of information and take the quality (i.e., accuracy or authoritativeness) of each source into account when predicting disease outbreaks. For example, when monitoring and forecasting Hantavirus incidences in Chile, it is safer to consider analyzing data provided by localized sources, such as local news papers, than considering all Hantavirus-related news reported by source across the world. Nonetheless, all previous approaches assume all sources (e.g., blogs or Twitter users) have the same accuracy and consider the available data to its entirety when forecasting an outbreak. 
 
-%Due to their volume, velocity and, public availability the aforementioned sources have been proven to be highly effective at monitoring disease outbreaks in a timely fashion. Most of the proposed techniques rely on identifying specific keywords related to the diseases under consideration and try to detect anomalous patterns over time with respect to the mention frequency of these keywords. 
+In this paper, we focus on the problem of providing location-specific disease outbreak predictions by analyzing a large corpus of publicly available health related news articles published by diverse data sources. More precisely, we model data sources as {\em evolving documents} over time, and introduce the {\em Source Location Time Topic} model (\model), a topic  model that explicitly models time and location jointly with word co-occurence patterns. \model also models the correlations between locations and sources, enabling us to assess the authoritativeness and accuracy of each source for a specific location. The latter allows us to consider each source as an expert and fuse their individual predictions to obtain increased accuracy. 
 
-While effective at detecting outbreaks of common diseases, such as influenza,  the above techniques have significant limitations at predicting outbreaks of {\em rare},  yet deadly, diseases, such as Hantavirus. Here we propose a novel framework for spatially targeted prediction of rare disease outbreaks. %\narenc{The next sentence undersells our work.. Didn't you guys expand it to include the concept of source?}
-The proposed framework leverages the temporal topic models formalism
-and auto-regression techniques proposed by Matsubara~et~al.~\cite{matsubara:2012} as well as one-class SVMs~\cite{schoelkopf:99}. More precisely we show how the temporal topic models 
-over archival and ongoing news articlces can enable 
-detection of emerging disease-related topics for a collection of predefined locations. 
-Furthermore, we show how one-class SVMs can be used on the output topic distribution 
-to detect anomalous topic distributions that constitute early indicators of the 
-onset of an outbreak. We evaluate and demonstrate the effectiveness of the proposed 
-framework for forecasting Hantavirus outbreaks in Latin America.
+At a high-level the model's generative process is as follows: Each data source is associated with a multinomial distribution over all available locations. A per-location multinomial distribution over topics is sampled from a Dirichlet prior, then for each entry provided by a data source a location is sampled by the source-specific location distribution, and a topic is sampled by the topic multinomial distribution corresponding to the assigned location; next two different per-topic multinomials generate the word and time-stamp associated with each entry. This generative process naturally captures (a) the fact that most data sources, such as news papers, provide coverage only for a specific set of locations that is fixed over time, and (b) the fact that topics exhibit different prominence levels at different locations.
 
-\section{Related Work}
+To predict a disease outbreak for a specific location at a future time point, we consider each source as an expert and integrate \model with one-class SVMs to detect per source anomalous topic distributions that constitute early indicators of the onset of an outbreak. Finally, we employ a multiplicative weights algorithm to learn the accuracy of each source and fuse the predictions corresponding to individual sources into a single final prediction.
 
-\ \\Discuss basic LDA model
-
-\ \\Discuss topics-over time, trimine, author-topic-model
-
-\ \\Discuss anomaly detection
+The remainder of the paper is organized as follows: (a) we first provide a formal definition of the problem of rare disease forecasting by analyzing data from multiple sources (see \Cref{sec:problem}), (b) we then present an overview of the \model model (see \Cref{sec:model}), (c) followed by an experimental evaluation (see \Cref{sec:exp}) on the effectiveness of the proposed framework for forecasting Hantavirus outbreaks in Latin America by analyzing a corpus of public health-related news articles from January 2013 to January 2014, drawn from HealthMap \footnote{http://healthmap.org}~\cite{healthmap}, a prominent online source of news articles and tweets for disease outbreak monitoring and real-time surveillance of emerging public health threats.
 
 \section{Problem Formulation}
+\label{sec:problem}
+
+In this section, we formally define the problem of rare disease forecasting by analyzing data from multiple source.
 
 \ \\Describe the problem of rare disease outbreak prediction
 
@@ -107,15 +128,23 @@ framework for forecasting Hantavirus outbreaks in Latin America.
 
 \ \\Present running examples
 
-\section{Source-based Spatio-temporal \\Topic Models}
+\section{Source Specific Spatio-temporal \\Topic Models}
+\label{sec:model}
 
 \ \\Present new topic model
 
+\subsection{Predicting Topic Distribution Future Time Points}
+\label{sec:pred}
+
 \ \\Present document classification approach on KL-divergence
+
+\subsection{Fusing Multiple Predictions}
+\label{sec:integration}
 
 \ \\Present one-class SVMs and Multiplicative weights algorithm
 
 \section{Experimental Evaluation}
+\label{sec:exp}
 
 \ \\Basic results (quality, accuracy, recall, precision)
 
@@ -123,7 +152,18 @@ framework for forecasting Hantavirus outbreaks in Latin America.
 
 \ \\Topics over time
 
+\section{Related Work}
+\label{sec:related_work}
+
+\ \\Discuss basic LDA model
+
+\ \\Discuss topics-over time, trimine, author-topic-model
+
+\ \\Discuss anomaly detection
+
+
 \section{Conclusions}
+\label{sec:conclusion}
 
 \bibliographystyle{abbrv}
 \bibliography{src_tm.bib}
