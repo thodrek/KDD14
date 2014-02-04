@@ -1,4 +1,5 @@
 \documentclass{sig-alternate}
+\usepackage{amsmath}
 \usepackage{cleveref}
 \usepackage{algorithm}
 \usepackage{times}
@@ -27,7 +28,9 @@
     \end{list}  }
 
 
-\newcommand{\model}{{SLT2}\xspace} %seer
+\newcommand{\model}{{S-STAT}\xspace} %stat is an abbreviation for statim which means immediately in latin
+
+\newtheorem{definition}{Definition}
 
 \begin{document}
 
@@ -36,7 +39,7 @@
 %\crdata{0-12345-67-8/90/01}  % Allows default copyright data (0-89791-88-6/97/05) to be over-ridden - IF NEED BE.
 % --- End of Author Metadata ---
 
-\title{Forecasting Rare Disease Outbreaks with Source Specific Spatio-temporal Topic Models}
+\title{\model: Forecasting Rare Disease Outbreaks with Source Based Spatio-temporal Topic Models}
 
 \numberofauthors{6}
 %\author{
@@ -109,39 +112,41 @@ All of the aforementioned approaches are mainly used to detect generic disease t
 
 Finally, when analyzing publicly available data from multiple sources, it is of high-importance to consider the source lineage of information and take the quality (i.e., accuracy or authoritativeness) of each source into account when predicting disease outbreaks. For example, when monitoring and forecasting Hantavirus incidences in Chile, it is safer to consider analyzing data provided by localized sources, such as local news papers, than considering all Hantavirus-related news reported by source across the world. Nonetheless, all previous approaches assume all sources (e.g., blogs or Twitter users) have the same accuracy and consider the available data to its entirety when forecasting an outbreak. 
 
-In this paper, we focus on the problem of providing location-specific disease outbreak predictions by analyzing a large corpus of publicly available health related news articles published by diverse data sources. More precisely, we model data sources as {\em evolving documents} over time, and introduce the {\em Source Location Time Topic} model (\model), a topic  model that explicitly models time and location jointly with word co-occurence patterns. \model also models the correlations between locations and sources, enabling us to assess the authoritativeness and accuracy of each source for a specific location. The latter allows us to consider each source as an expert and fuse their individual predictions to obtain increased accuracy. 
+In this paper, we focus on the problem of providing location-specific disease outbreak predictions by analyzing a large corpus of publicly available health related news articles published by diverse data sources. More precisely, we model data sources as {\em evolving documents} over time, and introduce the {\em Source based Spatio-TemporAl Topic} model (\model), a topic  model that explicitly models time and location jointly with word co-occurence patterns. \model also models the correlations between locations and sources, enabling us to assess the authoritativeness and accuracy of each source for a specific location. The latter allows us to consider each source as an expert and fuse their individual predictions to obtain increased accuracy. 
 
-At a high-level the model's generative process is as follows: Each data source is associated with a multinomial distribution over all available locations. A per-location multinomial distribution over topics is sampled from a Dirichlet prior, then for each entry provided by a data source a location is sampled by the source-specific location distribution, and a topic is sampled by the topic multinomial distribution corresponding to the assigned location; next two different per-topic multinomials generate the word and time-stamp associated with each entry. This generative process naturally captures (a) the fact that most data sources, such as news papers, provide coverage only for a specific set of locations that is fixed over time, and (b) the fact that topics exhibit different prominence levels at different locations.
+At a high-level the model's generative process is as follows: Each data source is associated with a multinomial distribution over all available locations. A per-location multinomial distribution over topics is sampled from a Dirichlet prior, then for each entry provided by a data source a location is sampled by the source-specific location distribution, and a topic is sampled by the topic multinomial distribution corresponding to the assigned location; next two different per-topic multinomials generate the word and time point associated with each entry. This generative process naturally captures (a) the fact that most data sources, such as news papers, provide coverage only for a specific set of locations that is fixed over time, and (b) the fact that topics exhibit different prominence levels at different locations.
 
 To predict a disease outbreak for a specific location at a future time point, we consider each source as an expert and integrate \model with one-class SVMs to detect per source anomalous topic distributions that constitute early indicators of the onset of an outbreak. Finally, we employ a multiplicative weights algorithm to learn the accuracy of each source and fuse the predictions corresponding to individual sources into a single final prediction.
 
-The remainder of the paper is organized as follows: (a) we first provide a formal definition of the problem of rare disease forecasting by analyzing data from multiple sources (see \Cref{sec:problem}), (b) we then present an overview of the \model model (see \Cref{sec:model}), (c) followed by an experimental evaluation (see \Cref{sec:exp}) on the effectiveness of the proposed framework for forecasting Hantavirus outbreaks in Latin America by analyzing a corpus of public health-related news articles from January 2013 to January 2014, drawn from HealthMap \footnote{http://healthmap.org}~\cite{healthmap}, a prominent online source of news articles and tweets for disease outbreak monitoring and real-time surveillance of emerging public health threats.
+The remainder of the paper is organized as follows: (a) we first provide an overview of the problem of rare disease forecasting by analyzing data from multiple sources (see \Cref{sec:problem}), (b) we then present an overview of the \model model (see \Cref{sec:model}), (c) followed by an experimental evaluation (see \Cref{sec:exp}) on the effectiveness of the proposed framework for forecasting Hantavirus outbreaks in Latin America by analyzing a corpus of public health-related news articles from January 2013 to January 2014, drawn from HealthMap \footnote{http://healthmap.org}~\cite{healthmap}, a prominent online source of news articles and tweets for disease outbreak monitoring and real-time surveillance of emerging public health threats.
 
-\section{Problem Formulation}
+\section{Problem Overview}
 \label{sec:problem}
 
-In this section, we formally define the problem of rare disease forecasting by analyzing data from multiple source.
+In this section, we formally define the problem of rare disease forecasting by analyzing data from multiple source. Consider we are given a collection of time-stamped event articles from a collection of data source $S$, referring to a set of locations $L$, containing words from a vocabulary $V$. We also consider a discrete time window $T$ containing a set of time points, so that the timestamp of each article can be associated with a single time point in $T$. For example, a time point $t \in T$ may correspond to a specific day or week over a time span of one year. For the remainder of the paper we will consider a time granularity is one week, defined as the 7-day period from Sunday to Saturday referred to as an {\em epidemiological week}, or {\em epi-week} for short.
 
-\ \\Describe the problem of rare disease outbreak prediction
+ It is convenient to convert the above input to a collection of tuples of the form {\em (source, location, word, time point; count)} where the count corresponds to the total number of articles mentioning a specific word and are associated with the source, location and time point in the tuple. For example, a tuple (``www.biobiochile.cl'', (``Los Lagos", ``Chile"), ``hanta", ``28''; 2) means that the count of news articles mentioning the word ``hanta" is two in the state of Los Lagos in Chile over the epi-week 28.  
 
-\ \\Emphasize the fact that a diverse set of sources is available
+Given the input described above, we partition the data across the different sources in $S$ and view each source $s \in S$ as a collection of $N_s$ time-stamped event tuples, each of which is associated with a specific word, count, location and time point. Given this form of the input each source $s \in S$ can be viewed as a time-evolving document where multiple mentions of the same word for a specific location and time-point are aggregated into a unified entry in $N_s$. We also assume that each entry in $N_s$ is associated with a certain {\em latent topic}. Finally, let $\mathcal{X}$ denote the set of all event collections $N_s$ for all sources $s \in S$.
 
-\ \\Present running examples
+For a particular set of event collections $\mathcal{X}$ our goal is to (a) find the hidden topics that best summarize the events in $\mathcal{X}$, their temporal trends and hidden patterns, detect the topic prominence for each specific location, as well as, the location focus for each source, and (b) forecast disease outbreaks for given future time points. In the following sections we provide a detailed description of our proposed solution to the two problems mentioned above. 
 
-\section{Source Specific Spatio-temporal \\Topic Models}
+\section{Source Based Spatio-temporal \\ Topic Models}
 \label{sec:model}
 
 \ \\Present new topic model
 
-\subsection{Predicting Topic Distribution Future Time Points}
+\section{Predicting Disease Outbreaks}
 \label{sec:pred}
 
 \ \\Present document classification approach on KL-divergence
 
+\ \\Present one-class SVMs
+
 \subsection{Fusing Multiple Predictions}
 \label{sec:integration}
 
-\ \\Present one-class SVMs and Multiplicative weights algorithm
+\ \\Multiplicative weights algorithm
 
 \section{Experimental Evaluation}
 \label{sec:exp}
