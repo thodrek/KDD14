@@ -386,12 +386,53 @@ Given the input described above, the algorithm proceeds in an iterative fashion 
 
 \section{Experimental Evaluation}
 \label{sec:exp}
-We present an empirical evaluation of \model and the overall proposed framework. The main questions we seek to address are: (1) how effective is \model at discovering disease topics and their corresponding spatio-temporal patterns, (2) how accurately can the proposed model predict future disease outbreak . We empirically study these questions using a real-world dataset.
-\subsection{Experimental Setup}
-\label{sec:exp_setup}
-\subsection{Verifying \model}
-\label{sec:exp_topic}
-\subsection{Predicting Rare Disease Outbreaks} 
+1. Give an introduction to this section. Discuss about the comparison of two models (location-based and source-based model),
+
+2. State the length of our study on detecting Hantavirus outbreaks from January 2013 to March 2014, i.e. we are comparing both the models over this time line.
+\subsection{Input Setup}
+1. Give an extensive description of the Healthmap Dataset we used for training both the models.
+2. Give the timeline for which this dataset is used to train both of our models, i.e. from June 2012 to March 2014.
+3. write a few sentences about the pre-processing steps such as stop-word removal and removal of other unimportant words.
+4. write about the initial training of the tensor (from June 2012 to October 2012) and then weekly training of the tensor starting from October 2012 to March 2014. Also write few sentences about the weekly topic distribution outputs and how the prediction model is run weekly on these topic distributions to generate the cosine similarity values for both the models.
+5. Give a detailed numerical description of the tensor (number of words, number of locations, number of sources)
+ 
+\subsection{GSR}
+
+1. In this section we will discuss in details about preparation of the GSR ground truth data, how the analysts search through multiple News sources as well as PROMED to determine confirmed hantavirus events. 
+2. Also state how an event is described such as (event date, first reported date, the first news source reporting the event, etc.)
+3. Also discuss the 6-month rule.
+
+\subsection{Evaluation Metrics}
+
+Discuss in details about the hierarchical evaluation metrics (Recall, Precision, F1-measure).
+
+\subsection{Model Paramater Settings}
+
+1. Discuss in details about the different parameter settings used in different parts of the model such as parameter settings in topic modeling part, also write few sentences why parameters are set to these values.
+
+2. Discuss about the cross validation procedure in one-class SVM to select the parameters of one-class SVM unique to each location and source.
+
+3. Discuss about different parameters used in multiplicative weights.
+
+\subsection{Disease Topic Discovery}
+1. Discuss in details about the interpretation of the disease topics we discovered from the topic model. 
+2. Discuss why a particular topic is a hantavirus topic or a topic is a dengue topic. Give the relevant rankings of the important disease related keywords to explain this. Also give a proper word cloud for the meaningful topics.
+3. Show the evolution of the Hantavirus topic as we train the model continuously over the timeline, i.e show how the ranking of the Hantavirus related keywords is improving as we train more and more the model.
+4. Also give the locations over which each topic is focused on. Give a google maps diagram to show the location distribution for a topic.
+
+
+\subsection{Disease Outbreak Detection Results}
+
+1. Give an extensive table showing the forecasting capabilities of both the models.
+2. write in details about the extensive analysis of the results.
+
+\subsection{Analysis of Sources}
+
+1. For sample locations discuss in details about the behaviour of the sources, give plots showing the weight variations of the sources for sample locations, from those plots we can explain which sources are more informative or less informative for a location over different parts of the time line.
+
+2. Discuss some events for which we correctly predicted at the state level. show which sources or experts are responsible for detecting those events and show which expert has actually reported the event to show that our methodology actually works.
+
+3. For each country, highlight some sources which are always higher-weighted for different locations in that country and viceversa. 
 
 \section{Related Work}
 \label{sec:related_work}
@@ -479,4 +520,5 @@ where $-si$ in the superscript indicates that the current example has been exclu
 & \propto \frac{n^{k,-(s,i)}_{w_{si}} + \beta_{w_{si}}}{\sum_{r = 1}^V n^{k,-(s,i)}_{r} + \beta_{r}} \cdot \frac{m^{k,-(s,i)}_{t_{si}} + \gamma_{t_{si}}}{\sum_{t = 1}^T m^{k,-(s,i)}_{t} + \gamma_{t}} \nonumber \\
 & \cdot \frac{o^{k,-(s,i)}_{l_{si}} + \alpha_{l_{si}}}{\sum_{l = 1}^L o^{k,-(s,i)}_{l} + \alpha_{l}}\nonumber
 \end{align}}
+
 \end{document}
