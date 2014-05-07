@@ -386,9 +386,20 @@ Given the input described above, the algorithm proceeds in an iterative fashion 
 
 \section{Experimental Evaluation}
 \label{sec:exp}
-1. Give an introduction to this section. Discuss about the comparison of two models (location-based and source-based model),
 
-2. State the length of our study on detecting Hantavirus outbreaks from January 2013 to March 2014, i.e. we are comparing both the models over this time line.
+In this section we present an empirical evaluation of our proposed models 
+- location-based model and source-based model in detecting hantavirus outbreaks.
+The main questions we seek to address are:
+
+\begin{enumerate}
+  \item How can we interpret and identify different disease topics discovered
+    by the topic model
+  \item How early and accurately can our proposed models forecast Hantavirus 
+    outbreaks
+  \item How can we evaluate the relative importance of sources and/or experts 
+    in detecting hantavirus outbreaks, for a particular location and 
+    at a specific time.
+\end{enumerate}
 \subsection{Input Setup}
 1. Give an extensive description of the Healthmap Dataset we used for training both the models.
 2. Give the timeline for which this dataset is used to train both of our models, i.e. from June 2012 to March 2014.
@@ -398,9 +409,30 @@ Given the input described above, the algorithm proceeds in an iterative fashion 
  
 \subsection{GSR}
 
-1. In this section we will discuss in details about preparation of the GSR ground truth data, how the analysts search through multiple News sources as well as PROMED to determine confirmed hantavirus events. 
-2. Also state how an event is described such as (event date, first reported date, the first news source reporting the event, etc.)
-3. Also discuss the 6-month rule.
+The Ground Truth Data for disease incidences we used for evaluating our models is the Gold Standard Report (GSR). 
+GSR is organized by an independent third party (MITRE), not the authors of this 
+paper. Using Human Analysts, MITRE surveys multiple Latin American or International 
+News Sources and study bulletins issued by health-reporting organizations such 
+as PROMED [?] or CDC [?] to determine confirmed Hantavirus outbreaks. For each 
+Hantavirus outbreak, MITRE provides the following information: 
+\begin{enumerate}
+  \item location information of the outbreak (Country, State and City)
+  \item Event date (date at which the disease incidence has occured or outbreak has started)
+  \item the earliest reported date in the news
+  \item the news source reporting the disease incidence
+  \item a small description of the disease incidence
+\end{enumerate}
+
+Figure x shows an example of a news article reporting a confirmed Hantavirus incidence. 
+The analyst starts by reading headlines of that article and if a significant disease incidence is discovered
+or inferred the analysts will skim through the remainder of the article to determine if a notable event is 
+described therein. If such an event is discovered, the analyst will extract and 
+encode relevant information given above about that event into a GSR template. In determining disease
+incidences, the analysts also adopt a 6-month rule. More specifically, if a news report is 
+for the same disease, in the same city within six months of the last report, then it 
+is not a new event and will not appear in the GSR; otherwise it is a new event and will be captured in the GSR.
+Figure x shows the distribution of Hantavirus incidences in four countries of Latin America (Chile, Argentina, Brazil and Uruguay)
+from January 2013 to March 2014.
 
 \subsection{Evaluation Metrics}
 
@@ -408,11 +440,36 @@ Discuss in details about the hierarchical evaluation metrics (Recall, Precision,
 
 \subsection{Model Paramater Settings}
 
-1. Discuss in details about the different parameter settings used in different parts of the model such as parameter settings in topic modeling part, also write few sentences why parameters are set to these values.
+For the Tensor Decomposition-based topic model we set Dirichlet parameter 
+$\alpha = 2/K$ (prior on topic given location) where K is the number of topics, 
+Dirichlet parameter $\beta = 0.01$ (prior on word given topic) and Dirichlet 
+parameter $\gamma = 0.01$ (prior on time given topic). These Dirichlet Hyperparameter 
+settings are typical for those used for analyzing hidden topics in datasets 
+and will be almost similar to values that one can learn by sampling or optimization.
 
-2. Discuss about the cross validation procedure in one-class SVM to select the parameters of one-class SVM unique to each location and source.
 
-3. Discuss about different parameters used in multiplicative weights.
+For one-class SVM we use a parameter search algorithm to find the exact kernel and its associated 
+set of parameters for each location and source in case of source-based model 
+and for each location in case of location-based model. We first construct the 
+training set based on non-disease points to be fed to the one-class SVM.
+For each kernel ("polynomial" and "rbf") we start with a valid range of associated paramters
+and for each combination of the parameters for each kernel, we calculate two types of error:
+\begin{enumerate}
+
+  \item \textbf{Normal Error} : This error is the sum of the error in predicting 
+    the training or normal or non-disease points calculated via the LOOCV method.
+  \item \textbf{Anomalous Error} : This error is the sum of the error in predicting the anomalous or disease points
+\end{enumerate}
+
+For certain locations we may have no anomalous or disease points, i.e. there 
+has been no hantavirus incidences in that location in the near past. For these 
+locations we only consider the normal error. For locations where we have both normal 
+and anomalous points, we evaluate the weighted sum of both the errors. We select 
+the parameter combination which gives us the minimum overall error.
+
+For the multiplicative weights algorithm the past window size over which we 
+calculate the accuracy of each relevant source or expert for a location is set
+to be 5 months. 
 
 \subsection{Disease Topic Discovery}
 1. Discuss in details about the interpretation of the disease topics we discovered from the topic model. 
