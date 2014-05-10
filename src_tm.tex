@@ -487,12 +487,14 @@ Discuss in details about the hierarchical evaluation metrics (Recall, Precision,
 
 \subsection{Model Paramater Settings}
 
-For the Tensor Decomposition-based topic model we set Dirichlet parameter 
+For the Topic Model we set Dirichlet parameter 
 $\alpha = 2/K$ (prior on topic given location) where K is the number of topics, 
 Dirichlet parameter $\beta = 0.01$ (prior on word given topic) and Dirichlet 
 parameter $\gamma = 0.01$ (prior on time given topic). These Dirichlet Hyperparameter 
 settings are typical for those used for analyzing hidden topics in datasets 
-and will be almost similar to values that one can learn by sampling or optimization.
+and will be almost similar to values that one can learn by sampling or optimization. 
+For selecting the number of topics (K), we evaluated the Topic Model with 8, 12 and 15 topics. 
+We find that setting $K=12$ results in more meaningful clustering of the hidden topics.  
 
 
 For one-class SVM we use a parameter search algorithm to find the exact kernel and its associated 
@@ -519,10 +521,41 @@ calculate the accuracy of each relevant source and/or expert for a location is s
 to be 5 months. 
 
 \subsection{Disease Topic Discovery}
-1. Discuss in details about the interpretation of the disease topics we discovered from the topic model. 
-2. Discuss why a particular topic is a hantavirus topic or a topic is a dengue topic. Give the relevant rankings of the important disease related keywords to explain this. Also give a proper word cloud for the meaningful topics.
-3. Show the evolution of the Hantavirus topic as we train the model continuously over the timeline, i.e show how the ranking of the Hantavirus related keywords is improving as we train more and more the model.
-4. Also give the locations over which each topic is focused on. Give a google maps diagram to show the location distribution for a topic.
+
+The output of the Topic Model provides us the following information: location 
+distribution over topics, topic distribution over words and Topic Distribution 
+over time. Now the question is: How can we interpret and/or identify these hidden 
+disease topics or what is the disease focus of each hidden topic? We accumulate a fixed 
+vocabulary of health-related keywords such as "gripe" (flu), "h1n1", "dengue", "aegypti", "mosquitos",
+"hanta", "hantavirus", "roedores" (rodents) and many more. For each hidden topic, 
+we analyze the topic-word probability of these keywords to identify the disease
+focus of the topic. More Specifically, under each topic we rank the keywords 
+based on its probability values and we can infer the topic interpretation by 
+looking at the top-ranked keywords under that topic. 
+
+Figure x shows the keyword cloud for 12 disease topics discovered from the Healthmap corpus.
+From the word clouds it is clear that the articles in the HealthMap corpus focus
+on both common disease topics like "Swine Flu", "Avian Influenza", "Dengue" and rare disease topics
+like "Hantavirus". Most of the keywords in the word clouds are in Spanish since 
+we are analyzing the Latin American News Media.   
+
+Since the focus of our work is forecasting Rare Disease (Hantavirus) outbreaks, 
+our topics of interest are Topic 2, Topic 7 and Topic 11. The top-ranked keywords 
+under these topics relate to "hanta", "ratones" (rats), "cardiopulmonar", "roedores" (rodents), "rural", 
+"hantavirus", "lluvia" (rainfall) and "corriente" (water current). These keywords make 
+sense as Hantavirus is mainly a cardiopulmonar disease caused by infection of rodents and/or rats 
+in mainly rural areas. The population of rodents is influenced by Rainfall and 
+thus increase in rainfall or water current is an indirect indicator of Hantavirus outbreaks.
+Figure x shows the evolution of Topic 2 at different points of the timeline. It 
+clearly depicts the fact that the hantavirus topics are becoming increasingly 
+prominent as we train the Topic Model with more incoming articles along the timeline.
+
+In figure x, we study the focus of the Hantavirus topics on different locations.
+Under each of the three topics of interest, we find the higher ranked locations, 
+i.e. locations in which the rare disease topics are more prominent. In the figure we see that 
+the rare disease topics are mostly clustered in the regions of Chile and Argentina. 
+Pie chart in figure x demonstrates that these two countries are most vulnerable to Hantavirus 
+outbreaks which validates the above outcome.  
 
 
 \subsection{Disease Outbreak Detection Results}
