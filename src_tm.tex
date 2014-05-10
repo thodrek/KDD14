@@ -408,6 +408,21 @@ The main questions we seek to address are:
 
 {\bf Input Setup and Preprocessing:}
 
+Our corpus of public health-related news articles is drawn from HealthMap [?] dataset
+introduced in the above section. In our experiments we are focusing on the HealthMap articles of 
+Latin America.  For Latin America, HealthMap articles provide monitoring and real-time surveillance 
+information about multiple diseases like Swine Flu H1N1, Dengue, Avian Influenza, Hantavirus, Chagas and many more.
+
+Content of each HealthMap article is enriched and extracted tokens and/or words are fed thorugh a number of preprocessing steps 
+like stopword removal to remove as much unwanted words as possible. HealthMap also 
+tags each article with a (lat, long) information and a date. From the (lat, long) information, 
+we infer the state and country of the article. Using some in-built modules in python, we
+also infer the source and/or publisher of the article. Thus for each article we can extract the following information:
+word count, location, source and timestamp. 
+
+*Talk to theo and take some suggestions*
+
+
 
 
 {\bf Models:} We evaluate the following models:
@@ -438,12 +453,12 @@ The main questions we seek to address are:
     by taking the average performance over 25 independent runs.
 \end{itemize}
 
- 
+All models are implemented in Python and the evaluation is performed on an x (machine information to be added) machine
 \subsection{GSR}
 
 The Ground Truth Data for disease incidences we used for evaluating our models is the Gold Standard Report (GSR). 
 GSR is organized by an independent third party (MITRE), not the authors of this 
-paper. Using Human Analysts, MITRE surveys multiple Latin American or International 
+paper. Using Human Analysts, MITRE surveys multiple Latin American and/or International 
 News Sources and study bulletins issued by health-reporting organizations such 
 as PROMED [?] or CDC [?] to determine confirmed Hantavirus outbreaks. For each 
 Hantavirus outbreak, MITRE provides the following information: 
@@ -489,18 +504,18 @@ and for each combination of the parameters for each kernel, we calculate two typ
 \begin{enumerate}
 
   \item \textbf{Normal Error} : This error is the sum of the error in predicting 
-    the training or normal or non-disease points calculated via the LOOCV method.
-  \item \textbf{Anomalous Error} : This error is the sum of the error in predicting the anomalous or disease points
+    the  normal and/or non-disease points calculated via the LOOCV method.
+  \item \textbf{Anomalous Error} : This error is the sum of the error in predicting the anomalous and/or disease points
 \end{enumerate}
 
-For certain locations we may have no anomalous or disease points, i.e. there 
+For certain locations we may have no anomalous and/or disease points, i.e. there 
 has been no hantavirus incidences in that location in the near past. For these 
 locations we only consider the normal error. For locations where we have both normal 
-and anomalous points, we evaluate the weighted sum of both the errors. We select 
+and anomalous historical points, we evaluate the weighted sum of both the errors. We select 
 the parameter combination which gives us the minimum overall error.
 
 For the multiplicative weights algorithm the past window size over which we 
-calculate the accuracy of each relevant source or expert for a location is set
+calculate the accuracy of each relevant source and/or expert for a location is set
 to be 5 months. 
 
 \subsection{Disease Topic Discovery}
