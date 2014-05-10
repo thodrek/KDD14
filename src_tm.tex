@@ -400,12 +400,44 @@ The main questions we seek to address are:
     in detecting hantavirus outbreaks, for a particular location and 
     at a specific time.
 \end{enumerate}
-\subsection{Input Setup}
-1. Give an extensive description of the Healthmap Dataset we used for training both the models.
-2. Give the timeline for which this dataset is used to train both of our models, i.e. from June 2012 to March 2014.
-3. write a few sentences about the pre-processing steps such as stop-word removal and removal of other unimportant words.
-4. write about the initial training of the tensor (from June 2012 to October 2012) and then weekly training of the tensor starting from October 2012 to March 2014. Also write few sentences about the weekly topic distribution outputs and how the prediction model is run weekly on these topic distributions to generate the cosine similarity values for both the models.
-5. Give a detailed numerical description of the tensor (number of words, number of locations, number of sources)
+\subsection{Experimental Setup}
+
+{\bf Dataset:}
+
+*Talk to Dr. Naren about assigning this part to Sumiko*
+
+{\bf Input Setup and Preprocessing:}
+
+
+
+{\bf Models:} We evaluate the following models:
+
+\begin{itemize}
+
+\item Source-based Model (S-STAT): This model corresponds to the source-based 
+  disease outbreak detection approach. This model has the following sub-models:
+  1) Tensor-based Topic Model which gives different topic distributions 
+  as output, 2) then the Prediction Model which calculates the topic cosine similarity 
+  values corresponding to each source and location for the future timepoint and 3) finally the multiplicative 
+  weights algorithm makes the final prediction for a particular location by calculating 
+  the weighted sum of the OCSVM prediction of the relevant sources for that location.
+  The weights are assigned to each expert and/or source based on its accuracy of prediction 
+  over the historical timepoints.
+\item Location-based Model (L-STAT): There is no concept of source and/or expert 
+  in this model. It has the following sub-models: 1) The Topic Model, and 2) then 
+  the Prediction Model which computes the topic cosine similarity values for each location for the future timepoint
+  and 3) the OCSVM Model which predicts whether the predicted cosine similarity value is an anomalous point or a normal
+  point with respect to the historical similarity values. If it is an anomalous point, the model generates a warning.
+\item Base Rate Model (BRM): We also compare the performance of our framework against a base rate model (BRM). This
+    model assumes a fixed rate for the occurence of hantavirus outbreaks for each country and each 
+    month. To determine this rate, the model extracts the average frequency of outbreak occurrences
+    reported over a past time window of four months. BRM reports disease outbreaks for that country at 
+    a frequency equal to the extracted rate. Alerting dates are assigned to the beginning of each month
+    while events dates are assigned uniformly at random to a day within the corresponding month. (Thus
+    lead time is not a meaningful criterion to evaluate the BRM.) The performance of BRM is enhanced
+    by taking the average performance over 25 independent runs.
+\end{itemize}
+
  
 \subsection{GSR}
 
