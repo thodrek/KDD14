@@ -12,6 +12,11 @@
 \usepackage{multirow}
 \usepackage{balance} 
 \usepackage{epstopdf}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+%\usepackage{caption}
+%\usepackage{subcaption}
+
 
 \newcommand{\squishlist}{
    \begin{list}{$\bullet$}
@@ -482,16 +487,23 @@ Hantavirus outbreak, MITRE provides the following information:
   \item a small description of the disease incidence
 \end{enumerate}
 
-Figure x shows an example of a news article reporting a confirmed Hantavirus incidence. 
-The analyst starts by reading headlines of that article and if a significant disease incidence is discovered
+The analyst starts by reading headlines of an article and if a significant disease incidence is discovered
 or inferred the analysts will skim through the remainder of the article to determine if a notable event is 
 described therein. If such an event is discovered, the analyst will extract and 
 encode relevant information given above about that event into a GSR template. In determining disease
 incidences, the analysts also adopt a 6-month rule. More specifically, if a news report is 
 for the same disease, in the same city within six months of the last report, then it 
 is not a new event and will not appear in the GSR; otherwise it is a new event and will be captured in the GSR.
-Figure x shows the distribution of Hantavirus incidences in four countries of Latin America (Chile, Argentina, Brazil and Uruguay)
+Figure 2 shows the distribution of confirmed Hantavirus incidences in four countries of Latin America (Chile, Argentina, Brazil and Uruguay)
 from January 2013 to March 2014.
+
+\begin{figure}[h!]
+      \centering
+          \includegraphics[width=0.5\textwidth]{figures/hanta_dist.pdf}
+    \caption{Hantavirus Outbreak Distribution in four countries of Latin
+  America (Chile, Argentina, Brazil, Uruguay) from January 2013 to March
+  2014}
+    \end{figure}
 
 \subsection{Evaluation Metrics}
 
@@ -520,12 +532,19 @@ location is:
 
 Note that if $x_{1} = 0$ (i.e. the warning misses the country level location), then $a_{loc} = 0$. If 
 all the entries match, then $a_{loc} = 1$. Note also that a warning is penalized if it is underspecified or overspecified.
-The $a_{date}$ is calculated as $a_{date} = 1-min(|predicted date in the warning - actual event date|, 7)/7$.
+The $a_{date}$ is calculated as $a_{date} = 1-min(|predicted date -
+actual event date|, 7)/7$.
 The Quality Score takes values between 0 and 4. 
 
 Finally, we consider the lead time of our predictions, which is calculated as the
 time between the alerting date in the warning and the actual date of reporting of the outbreak (not the incidence
 date of the outbreak).
+
+\paragraph{\bf Mapping Warnings to Events} Since there could be multiple
+events (and/or alerts) in a given month, a strategy is necessary to map events to alerts. We
+conduct a maximum bipartite matching between events and alerts where i) an edge
+exists if the alert was issued prior to the reporting date of the event, ii) the
+weight on the edge denotes the putative quality score. 
 
 
 \subsection{Model Paramater Settings}
@@ -576,7 +595,38 @@ focus of the topic. More Specifically, under each topic we rank the keywords
 based on its probability values and we can infer the topic interpretation by 
 looking at the top-ranked keywords under that topic. 
 
-Figure x shows the keyword cloud for 12 disease topics discovered from the Healthmap corpus.
+\begin{figure*}[ht]
+\begin{center}
+        \subfigure{\includegraphics[scale=0.27]{figures/topic_12_cloud.pdf}\label{fig:topic_12_cloud}}
+        \subfigure{\includegraphics[scale=0.27]{figures/topic_9_cloud.pdf} \label{fig:topic_9_cloud}}
+        \subfigure{\includegraphics[scale=0.27]{figures/topic_10_cloud.pdf}\label{fig:topic_10_cloud}}
+\end{center}
+\caption{Word Clouds of Common Disease Topics (a) Topic 12 (Swine Flu) (b) Topic 9 (Avian Flu) (c) Topic 10 (Dengue)}
+\label{fig:Common_clouds}
+\end{figure*}
+
+\begin{figure*}[ht]
+\begin{center}
+        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_cloud.pdf}\label{fig:topic_2_cloud}}
+        \subfigure{\includegraphics[scale=0.27]{figures/topic_7_cloud.pdf}\label{fig:topic_7_cloud}}
+        \subfigure{\includegraphics[scale=0.27]{figures/topic_11_cloud.pdf}\label{fig:topic_11_cloud}}
+\end{center}
+\caption{Word Clouds of Hantavirus Topics (a) Topic 2 (b) Topic 7 (c) Topic 11}
+\label{fig:Rare_clouds}
+\end{figure*}
+
+\begin{figure*}[ht]
+\begin{center}
+        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_1.pdf}\label{fig:topic_2_1}}
+        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_2.pdf}\label{fig:topic_2_2}}
+        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_cloud.pdf}\label{fig:topic_2_cloud}}
+\end{center}
+\caption{Evolution of Hantavirus Topic (Topic 2) across the timeline (a)October 2012, (b) June 2013, (c) March 2014}
+\label{fig:evolution_clouds}
+\end{figure*}
+
+
+Figures 3 and 4 show the keyword clouds for the disease topics discovered from the Healthmap corpus.
 From the word clouds it is clear that the articles in the HealthMap corpus focus
 on both common disease topics like "Swine Flu", "Avian Influenza", "Dengue" and rare disease topics
 like "Hantavirus". Most of the keywords in the word clouds are in Spanish since 
@@ -585,28 +635,120 @@ we are analyzing the Latin American News Media.
 Since the focus of our work is forecasting Rare Disease (Hantavirus) outbreaks, 
 our topics of interest are Topic 2, Topic 7 and Topic 11. The top-ranked keywords 
 under these topics relate to "hanta", "ratones" (rats), "cardiopulmonar", "roedores" (rodents), "rural", 
-"hantavirus", "lluvia" (rainfall) and "corriente" (water current). These keywords make 
+"hantavirus", "excrementos" (rodent droppings), "graneros" (barns),
+"campos" (fields), "lluvia" (rainfall) and "corriente" (water current). These keywords make 
 sense as Hantavirus is mainly a cardiopulmonar disease caused by infection of rodents and/or rats 
-in mainly rural areas. The population of rodents is influenced by Rainfall and 
+in mainly rural areas (barns and fields). The infection is spread through rodent droppings, urine and saliva.
+The population of rodents is influenced by Rainfall and 
 thus increase in rainfall or water current is an indirect indicator of Hantavirus outbreaks.
-Figure x shows the evolution of Topic 2 at different points of the timeline. It 
-clearly depicts the fact that the hantavirus topics are becoming increasingly 
-prominent as we train the Topic Model with more incoming articles along the timeline.
-
+Figure 5 shows the evolution of Topic 2 across timepoints (Ocotber
+2012, June 2013, March 2014). It clearly depicts the fact that the hantavirus topics are becoming increasingly 
+prominent as we train the Topic Model continuously with new incoming articles along the timeline.
 
 
 \subsection{Disease Outbreak Detection Results}
 
-1. Give an extensive table showing the forecasting capabilities of both the models.
-2. write in details about the extensive analysis of the results.
+For Disease Outbreak Detection we focus on four countries - Argentina,
+Chile, Uruguay and Brazil for which Cases of hantavirus outbreaks were reported
+from January 2013 to December 2013. Table 2 gives an
+extensive evaluation of both our models (L-STAT and S-STAT) in terms of
+forecasting Hantavirus incidences. As shown, the S-STAT model can
+forecast hantavirus incidences with an average Lead Time of 6.4 days,
+whereas the average Lead Time for L-Stat Model is 6.09 days. Both the
+models are performing similar in terms of Lead Time. This can be
+attributed to the similar manner by which both the models generate
+warnings. In terms of Quality Score (QS), the S-STAT model is overall slighly
+better than the L-STAT Model. Quality Score of S-STAT model is better than L-STAT for 6
+months while L-STAT is superior in 5 months. This depicts that both the
+approaches are more or less similar in forecasting Location and Time
+accurately for certain hantavirus incidences. Finally, in terms of
+F1-score S-STAT model completely outperforms the L-STAT model. F1-score
+weights Recall and Precision equally, and thus a good model will
+maximize both precision and recall simultaneously. As a result S-STAT is
+a far better and reliable model than L-STAT in terms of Sensitivity and
+Specificity. The reason is that the L-STAT model overpredicts, i.e. it
+issues higher number of warnings than S-STAT for a particular country and  
+a particular month. Over-predicting sometimes gives
+advantage to the L-STAT model in terms of Quality Score(QS) because
+higher number of warnings ensures higher number of matchings between
+warnings and events and the best possible matching is selected while
+calculating QS. Thats the reason L-STAT model is better than S-STAT in
+terms of QS for certain months.
 
-\subsection{Analysis of Sources}
+\begin{table}
+  %\centering
+  \caption{Performance results for S-STAT and L-STAT in terms of
+  detecting hantavirus incidences}
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+    \hline \hline
+    {\bf Month} & \multicolumn{3}{c|}{{\bf S-STAT}} &
+    \multicolumn{3}{c|}{{\bf L-STAT}} &
+    \cline{2-7} & QS & LT & F1-score & QS & LT & F1-score \\
+    \hline 
+    {\bf Jan-2013} & 2.84 & 5.00 & 0.67 & 2.88 &
+                      5.80 & 0.30 \\ 
+    \hline
+     {\bf Feb-2013} & 3.24 & 7.0 & 0.36 & 2.92 &
+                      10.0 & 0.15 \\ 
+    \hline
+    {\bf March-2013} & 2.81 & 11.5 & 0.36 & 3.00 &
+          7.25 & 0.57 \\ 
+    \hline
+    {\bf April-2013} & 2.99 & 5.0 & 0.53 & 2.85 &
+                      5.67 & 0.35 \\ 
+    \hline
+    {\bf May-2013} & 3.01 & 4.25 & 0.43 & 2.99 &
+                      4.33 & 0.18 \\ 
+    \hline
+    {\bf June-2013} & 2.72 & 6.0 & 0.23 & 0.00 &
+                      0.00 & 0.00 \\ 
+    \hline
+    {\bf July-2013} & 2.92 & 5.0 & 0.19 & 0.00 &
+                      0.00 & 0.00 \\ 
+    \hline
+    {\bf Aug-2013} & 2.72 & 2.0 & 0.21 & 2.81 &
+                      12.00 & 0.26 \\ 
+    \hline
+    {\bf Sept-2013} & 2.47 & 5.0 & 0.49 & 2.44 &
+                      5.5 & 0.21 \\ 
+    \hline
+    {\bf Oct-2013} & 2.97 & 9.6 & 0.59 & 3.17 &
+                      10.75 & 0.19 \\ 
+    \hline
+    {\bf Nov-2013} & 2.65 & 6.8 & 0.62 & 2.87 &
+                      4.67 & 0.23 \\ 
+    \hline
+    {\bf Dec-2013} & 2.87 & 8.0 & 0.64 & 2.87 &
+                      7.1 & 0.53 \\ 
+    \hline \hline
 
-1. For sample locations discuss in details about the behaviour of the sources, give plots showing the weight variations of the sources for sample locations, from those plots we can explain which sources are more informative or less informative for a location over different parts of the time line.
+  \end{tabular}
+  \label{tab:results}
+\end{table}
 
-2. Discuss some events for which we correctly predicted at the state level. show which sources or experts are responsible for detecting those events and show which expert has actually reported the event to show that our methodology actually works.
+{\bf (*Table to be expanded, per country evaluation to be added, base rate
+model results to be added, LS values to be given as a separate
+evaluation metric*)}
 
-3. For each country, highlight some sources which are always higher-weighted for different locations in that country and viceversa. 
+\subsection{Model evaluation in capturing base rate changes in Chile and
+argentina}
+
+To be added.
+
+\subsection{Analysis of Sources and/or Experts}
+
+to be added.
+
+\begin{figure*}[ht]
+\begin{center}
+        \subfigure{\includegraphics[scale=0.13]{figures/F1-score-overall.pdf}\label{fig:F1-score}}
+        \subfigure{\includegraphics[scale=0.13]{figures/QS_overall.pdf}\label{fig:QS}}
+        \subfigure{\includegraphics[scale=0.13]{figures/Lead_time_overall.pdf}\label{fig:LT}}
+\end{center}
+\caption{Comparison plots of S-STAT and L-STAT in terms of (a)
+F1-score,(b) Quality Score and (c) Lead Time}
+\label{fig:evaluation_metric}
+\end{figure*}
 
 \section{Related Work}
 \label{sec:related_work}
