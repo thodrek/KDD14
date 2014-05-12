@@ -404,11 +404,20 @@ The main questions we seek to address are:
 
 {\bf Dataset:}
 
-{\bf *Talk to Dr. Naren about assigning this part to Sumiko*}
+The dataset we have used for training our models is the HealthMap [?] (www.healthmap.org) 
+corpus. HealthMap is a prominent online source of news articles and tweets for 
+disease outbreak monitoring and real-time surveillance of emerging public health
+threats. In operation since September 2006, HealthMap system captures outbreak 
+as well as disease-related warning data from over 50,000 electronic media sources.
+Thus HealthMap dataset has the potential to be used as an early detection system for disease outbreaks,
+even from areas which is relatively inaccessible to traditional global public health efforts.
+HealthMap system also supports multiple languages, currently it monitors disease outbreak information
+sources in Spanish, English, Arabic, Portuguese, Russian, Chinese and French. Using this service 
+we receive various disease-related news documents as a daily feed.
 
 {\bf Input Setup and Preprocessing:}
 
-Our corpus of public health-related news articles is drawn from HealthMap [?] dataset
+Our corpus of public health-related news articles is drawn from HealthMap dataset
 introduced in the above section. In our experiments we are focusing on the HealthMap articles of 
 Latin America.  For Latin America, HealthMap articles provide monitoring and real-time surveillance 
 information about multiple diseases like Swine Flu H1N1, Dengue, Avian Influenza, Hantavirus, Chagas and many more.
@@ -454,7 +463,7 @@ paragraph*}
     by taking the average performance over 25 independent runs.
 \end{itemize}
 
-All models are implemented in Python and the evaluation is performed on an x (machine information to be added) machine
+All models are implemented in Python and the evaluation is performed on an Intel(R) Xeon(R) CPU E7- 4870 @2.40GHz/64bit/1TB machine.
 
 
 \subsection{GSR}
@@ -486,7 +495,38 @@ from January 2013 to March 2014.
 
 \subsection{Evaluation Metrics}
 
-Discuss in details about the hierarchical evaluation metrics (Recall, Precision, F1-measure).
+We adopt three key measures of performance (Quality Score, F1 score and Lead Time). Evaluation for a model is done 
+on a monthly basis. More Specifically, the warnings and/or alerts generated from a model in a particular month
+are evaluated against the GSR events in that month. Given our alerts, we compute the Recall and Precision at a country level, 
+grouping together alerts for locations in the same country. Using the Recall 
+and Precision values, we calculate the F1 score as $F_{1} = (2 * Precision * Recall) / (Precision + Recall)$.  
+
+We also compute an average warning quality for each country. Each prediction for a location in 
+the country under consideration is assigned a Quality Score $Q = (4/3) * (1 + a_{loc} + a_{date})$, where $a_{loc}$
+and $a_{date}$ denote the location and date accuracy of the prediction. For calculating $a_{loc}$ we use a three-level
+topology. At the top level is the country, the second level is the province, state, region, or department, or the 
+next largest administrative division, and the third level is the city. The models will generate their 
+warning using this typology, i.e. the warning will be in the form of a triple, (country, province or state, city). 
+For rare disease, we do not have enough resolution at the city level, so the models predict upto the state level and
+keeps the city name "-" in the warning. The evaluation script compares the warning location with 
+the GSR location, to get $(x_{1}, x_{2}, x_{3})$, where $x_{1}$ is the country comparison, $x_{2}$ is the province 
+or state comparison (if the GSR has that level of specificity), and $x_{3}$ is the city comparison 
+(if the GSR has that level of specificity). $x_{i} = 0$ if they do not match, $x_{i} = 1$ if they do. If 
+either one of the GSR entry or the warning entry is blank and the other is not, xi = 0. If 
+both are blank, xi = 1. The match between the warning location and the GSR 
+location is:  
+
+    $a_{loc} = 1/3 x_{1} + 1/3 x_{1} x_{2} + 1/3 x_{1} x_{2} x_{3}$
+
+Note that if $x_{1} = 0$ (i.e. the warning misses the country level location), then $a_{loc} = 0$. If 
+all the entries match, then $a_{loc} = 1$. Note also that a warning is penalized if it is underspecified or overspecified.
+The $a_{date}$ is calculated as $a_{date} = 1-min(|predicted date in the warning - actual event date|, 7)/7$.
+The Quality Score takes values between 0 and 4. 
+
+Finally, we consider the lead time of our predictions, which is calculated as the
+time between the alerting date in the warning and the actual date of reporting of the outbreak (not the incidence
+date of the outbreak).
+
 
 \subsection{Model Paramater Settings}
 
@@ -553,12 +593,6 @@ Figure x shows the evolution of Topic 2 at different points of the timeline. It
 clearly depicts the fact that the hantavirus topics are becoming increasingly 
 prominent as we train the Topic Model with more incoming articles along the timeline.
 
-In figure x, we study the focus of the Hantavirus topics on different locations.
-Under each of the three topics of interest, we find the higher ranked locations, 
-i.e. locations in which the rare disease topics are more prominent. In the figure we see that 
-the rare disease topics are mostly clustered in the regions of Chile and Argentina. 
-Pie chart in figure x demonstrates that these two countries are most vulnerable to Hantavirus 
-outbreaks which validates the above outcome.  
 
 
 \subsection{Disease Outbreak Detection Results}
