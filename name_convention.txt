@@ -1,0 +1,19 @@
+Naming Conventions in the data at each part of the model:
+
+newestimatedword.pkl : word distribution given a particular topic
+newestimatedlocation.pkl: topic distribution given a location
+newestimatedtime.pkl: time distribution given a topic
+pred_model_source.py: python code which computes the topic cosine similarity for source-based model.
+pred_model_loc.py: python code which computes the topic cosine similarity for location-based model.
+topsourceloctimedict : this data contains all the cosine similarity values corresponding to each topic, source, location and time.
+toploctimedict: this date contains all the cosine similarity values corresponding to topic, location and time.
+totaldictionary.pkl: this data is a dictionary which represents the tensor and each key is represented as (word, location, source, time) and the value of a key is the absolute 
+count of the word appearing at that location, source and time.
+
+totalword.pkl: represents total number of unique words.
+totallocation.pkl: represents total number of unique locations.
+totalsource.pkl: represents total number of unique sources.
+
+
+
+
