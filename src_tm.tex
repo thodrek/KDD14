@@ -172,7 +172,7 @@ LDA is a Bayesian network that generates a document using a mixture of topics. I
 
 Rosen-Zvi et al., extended the basic LDA model by explicitly modeling author's interests as a mixture of topics. In its generative process for each document $d$, a set of authors $a_d$ is observed. To generate each word, an author $x$ is chosen uniformly from this set, then a topic $z_{di}$ is selected from a topic distribution $theta_{x}$ that is specific to the author, and then a word  $w{di}$ is generated from a topic-specific multinomial distribution $\phi_{z_{di}}$.
 
-In \model, sources are viewed as dynamic documents and locations as authors similarly to the AT model. Moreover, topic discovery is influenced not only by word co-occurences, but also spatial and temporal information. Our notation is summarized in \Cref{tab:notation}, and the graphical model representation of \model is shown in \Cref{fig:stm_model}.  \model is a generative model of location, word, and time point in the timestamped event entries for all sources. Next, we describe the model's generative process used in Gibbs sampling for parameters estimation. The process is as follows: 
+In \model, sources are viewed as dynamic documents and locations as authors similarly to the AT model. Moreover, topic discovery is influenced not only by word co-occurences, but also spatial and temporal information. Our notation is summarized in \Cref{tab:notation}, and the graphical model representation of \model is shown in \Cref{fig:stm_model}.  \model is a generative model of the word and time point in the timestamped event entries of all sources corresponding to an observed location. Next, we describe the model's generative process used in Gibbs sampling for parameters estimation. The process is as follows: 
 
 \begin{figure*}[ht]
 \begin{center}
@@ -210,7 +210,7 @@ $t_{si}$ & The time-point associated with the $i$th entry from source $s$ \\
 \label{tab:notation}
 \end{table*}
 
-\ \\{\bf \model generative procees}
+\ \\{\bf \model generative proceess}
 \begin{enumerate}
 \item Draw $K$ multinomials $\phi_z$ from a Dirichlet prior $\beta$, one for each topic $z$;
 \item Draw $K$ multinomials $\xi_z$ from a Dirichlet prior $\gamma$, one for each topic $z$;
