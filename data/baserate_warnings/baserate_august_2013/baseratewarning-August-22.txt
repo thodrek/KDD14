@@ -1,0 +1,2 @@
+{"confidence": "0.5", "eventType": "0313", "comments": "Base Rate Model", "location": ["Argentina", "-", "-"], "date": "2013-07-31", "mitreId": "a22071cd310a9c04f2058c6cc2aa7e803ca2d797", "eventDate": "2013-08-10", "population": "General Population"}
+{"confidence": "0.5", "eventType": "0313", "comments": "Base Rate Model", "location": ["Chile", "-", "-"], "date": "2013-07-31", "mitreId": "ecefc854a820a08677d021148109b73617ab0730", "eventDate": "2013-08-03", "population": "General Population"}
