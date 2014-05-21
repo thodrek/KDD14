@@ -1,0 +1,3 @@
+{"confidence": "0.5", "eventType": "0313", "comments": "Base Rate Model", "location": ["Chile", "-", "-"], "date": "2013-03-31", "mitreId": "5d41fff22b40cd7ed25d4d5100304a7d4f8dd51c", "eventDate": "2013-04-29", "population": "General Population"}
+{"confidence": "0.5", "eventType": "0313", "comments": "Base Rate Model", "location": ["Chile", "-", "-"], "date": "2013-03-31", "mitreId": "b5e03a7e1971b96531384d54e59e11ad7ceb1507", "eventDate": "2013-04-01", "population": "General Population"}
+{"confidence": "0.5", "eventType": "0313", "comments": "Base Rate Model", "location": ["Chile", "-", "-"], "date": "2013-03-31", "mitreId": "36fe1875a15ca722fc844aa09b5487b4c596ba47", "eventDate": "2013-04-09", "population": "General Population"}
