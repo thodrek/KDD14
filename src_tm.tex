@@ -341,6 +341,7 @@ Given the input described above, the algorithm proceeds in an iterative fashion 
 Finally, each outbreak prediction for a location $l$ is associated with a {\em confidence score}. Let $S$ be the set of relevant sources for location $l$ and $S_{-1}$ be the subset of sources predicting an outbreak. Moreover, let $a_l(s)$ be the overall {\em accuracy} of a source $s \in S_l$ considering its past predictions for location $l$. The accuracy of source $s$ is defined over the available past time window as $a_l(s) = \frac{\#\mbox{ correct preditions}}{\#\mbox{total prediction}}$ and corresponds to the probability of $s$ giving a correct prediction. Combining the above, we define the confidence score as: 
 \begin{equation}
 ConfScore = \prod_{s \in S_{-1}}a_l(s) \cdot \prod_{s \in S_l \setminus S_{-1}} (1 - a_l(s))
+\label{eq:conf}
 \end{equation}
 Given the confidence score of each outbreak prediction, one can use a threshold mechanism to select the final outbreak predictions, and balance the trade-off between precision and recall as we show in \Cref{sec:exp}. 
 
@@ -349,14 +350,14 @@ Given the confidence score of each outbreak prediction, one can use a threshold 
 We present an empirical evaluation of the proposed framework: The main questions we seek to address are: (1) how effective is the proposed topic model in identifying disease topics, and in discovering the corresponding spatio-temporal patterns, (2) how accurately can the proposed techniques forecast disease outbreaks, and (3) whether leveraging the varying authoritativeness levels of data sources for different locations can improve the accuracy of outbreak predictions. We empirically study these questions using real-world data focusing on rare-disease outbreaks in countries in Latin America.
 
 \subsection{Experimental Setup}
-\noindent{\bf Data:} We consider a dataset corresponding to a corpus of public health-related news articles and tweets extracted from HealthMap~\cite{healthmap}, a prominent online aggregator of news articles and tweets for disease outbreak monitoring and real-time surveillance of emerging public health threats. Since, we focus on countries in Latin America the vocabulary we consider consists of Spanish and Portuguese words. Each article is associated with a data source and a location corresponding to a country-state pair. Traditional IR pre-processing such as stop-word removal and term frequency modeling is performed over a fixed vocabulary of words. The dictionary contains words that are either commonly associated with diseases (e.g.,``contagious") or words associated with a specific disease (e.g.,``rodents",``hanta" for Hantavirus). The latter are also used to identify the topics that are most 
+\noindent{\bf Data:} We consider a dataset corresponding to a corpus of public health-related news articles and tweets extracted from HealthMap~\cite{healthmap}, a prominent online aggregator of news articles and tweets for disease outbreak monitoring and real-time surveillance of emerging public health threats. Since, we focus on countries in Latin America the vocabulary we consider consists of Spanish and Portuguese words. The dictionary does not comprise only of disease related words.  Each article is associated with a data source and a location corresponding to a country-state pair. Traditional IR pre-processing such as stop-word removal and term frequency modeling is performed over a fixed vocabulary of words. The dictionary contains words that are either commonly associated with diseases (e.g.,``contagious") or words associated with a specific disease (e.g.,``rodents",``hanta" for Hantavirus). The latter are also used to identify the topics that are most 
 
 When predicting for an epi week $t$ we use historical (weekly) data from June 2012 up to the previous week $t-1$ to discover the topics using \model and estimate the source-topic relevance values for $t$ at each available location. As we progress to prediction for forthcoming weeks, we gather the estimated source-topic relevance values corresponding to past weeks and align them with the gold standard report (\Cref{sec:source_pred}) to  form the necessary training points for the OCSVMs. We evaluate the performance of our proposed techniques from January 2013 to March 2014. The size of the input data varies over time, as new articles are added every epi week. The number of words in the data ranges from 20908 to 48700, the number of locations from 74 to 144 and the number of HealthMap data sources from 381 to 798.
 
 \noindent{\bf Models:} We evaluate the following models:
 \squishlist
-\item \fullmodel: Our source-based framework introduced in \Cref{sec:model} and \Cref{sec:pred}. 
-\item \locationmodel: A variation of \fullmodel that uses \model to identify disease related topics and their spatio-temporal patterns, but integrates \model with a {\em location-only} anomaly detection approach. We follow a similar approach to the one introduced in \Cref{sec:source_pred}, where for each location we calculate the location-topic relevance values for future time points and use a separate OCSVM for each location to detect anomalous points. To calculate the location-topic relevance, we estimate each entry of the location's word frequency vector as $\hat{F}_{l,t}[w] = \bar{x}_{w} \sum_{z \in K}\phi_{z,w}\cdot \theta_{l,z} \cdot \xi_{z,t}$. Intuitively,  \locationmodel integrates news articles from multiple data sources ignoring the accuracy of individual sources.
+\item \fullmodel: Our source-based framework introduced in \Cref{sec:model} and \Cref{sec:pred} coupled with a thresholding mechanism where every week and for each country we accept only the predictions whose confidence score (see \Cref{eq:conf}) belongs in the top-$k$ percentile of the prediction scores for that country.
+\item \locationmodel: A variation of \fullmodel that uses \model to identify disease related topics and their spatio-temporal patterns, but integrates \model with a {\em location-only} anomaly detection approach. We follow a similar approach to the one introduced in \Cref{sec:source_pred}, where for each location we calculate the location-topic relevance values for future time points and use a separate OCSVM for each location to detect anomalous points. To calculate the location-topic relevance, we estimate each entry of the location's word frequency vector as $\hat{F}_{l,t}[w] = \bar{x}_{w} \sum_{z \in K}\phi_{z,w}\cdot \theta_{l,z} \cdot \xi_{z,t}$. Intuitively,  \locationmodel integrates news articles from multiple data sources ignoring the accuracy of individual sources. We use a thresholding mechanism similar to that of \fullmodel considering the accuracy of each state-based OCSVM. 
 \item BRM: A {\em base rate model} that assumes a fixed rate for the occurrence of rare disease outbreaks for each location and for each
 month. To determine this rate, the model extracts the average frequency of outbreak occurrences reported over a past time window of four months. BRM reports disease outbreaks for that location at a frequency equal to the extracted rate. Alerting dates are assigned to the beginning of each month while event dates are assigned uniformly at random to a day within the corresponding month. We take the average performance over 25 independent runs.
 \squishend
@@ -365,140 +366,12 @@ All models are implemented in Python and the evaluation is performed on an Intel
 
 \noindent{\bf Parameter Setup:} The parameters for each OCSVM in the aforementioned models are tuned using a leave-one-out cross-validation approach. For the topic model \model, we set the parameters of the Dirichlet priors to $\alpha = 2/K$, $\beta = 0.01$ and $\gamma = 0.01$ where K is the number of topics. We evaluated the Topic Model with 8, 12 and 15 topics, and found that $K=12$ results in more meaningful topics.  
 
-\noindent{\bf Metrics:} We adopt five key measures of performance. Given our predictions, we compute the precision, recall and F1-score at a country level, grouping together prediction for locations in the same country. We also compute an average warning quality for each country. Each prediction for a location in the country under consideration is assigned a quality score $Q = \frac{4}{3}(1 + a_{loc} + a_{date})$, where $a_{loc}$ and $a_{date}$ denote the location and date accuracy of the prediction. To calculate $a_{loc}$ we use a two-level topology, considering the country, and state corresponding to the location of a warning. A partial score of $0.67$ is assigned to a warning if it matches the country of an outbreak correctly and an additional score of $0.33$ is assigned if the warning matches the state correctly. The date specific accuracy $a_{date}$ is calculated as $a_{date} = 1 - \frac{min(|\mbox{predicted date} - \mbox{actual date}|,7)}{7}$. Finally, we consider the lead time of our predictions, which is calculated as the time between the date of alerting and the actual date of reporting the outbreak (not the incidence date of the outbreak). 
+\noindent{\bf Metrics:} We adopt five key measures of performance. Given our predictions, we compute the precision, recall and F1-score at a country level, grouping together prediction for locations in the same country. We also compute an average warning quality for each country. Each prediction for a location in the country under consideration is assigned a quality score $Q = \frac{4}{3}(1 + a_{loc} + a_{date})$, where $a_{loc}$ and $a_{date}$ denote the location and date accuracy of the prediction. To calculate $a_{loc}$ we use a two-level topology, considering the country, and state corresponding to the location of a warning. A partial score of $0.5$ is assigned to a warning if it matches the country of an outbreak correctly and an additional score of $0.5$ is assigned if the warning matches the state correctly. The date specific accuracy $a_{date}$ is calculated as $a_{date} = 1 - \frac{min(|\mbox{predicted date} - \mbox{actual date}|,7)}{7}$. Finally, we consider the lead time of our predictions, which is calculated as the time between the date of alerting and the actual date of reporting the outbreak (not the incidence date of the outbreak). 
 
 \noindent{\bf Mapping Warnings to Events:} Since there could be multiple events (and/or alerts) in a given month, a strategy is necessary to map events to alerts. We conduct a maximum bipartite matching between events and alerts where (i) an edge exists if the alert was issued prior to the reporting date of the event, (ii) the weight on the edge denotes the putative quality score. 
-
-
-%\subsection{GSR}
-%
-%The Ground Truth Data for disease incidences we used for evaluating our models is the Gold Standard Report (GSR). 
-%GSR is organized by an independent third party (MITRE), not the authors of this 
-%paper. Using Human Analysts, MITRE surveys multiple Latin American and/or International 
-%News Sources and study bulletins issued by health-reporting organizations such 
-%as PROMED [?] or CDC [?] to determine confirmed Hantavirus outbreaks. For each 
-%Hantavirus outbreak, MITRE provides the following information: 
-%\begin{enumerate}
-%  \item location information of the outbreak (Country, State and City)
-%  \item Event date (date at which the disease incidence has occured or outbreak has started)
-%  \item the earliest reported date in the news
-%  \item the news source reporting the disease incidence
-%  \item a small description of the disease incidence
-%\end{enumerate}
-%
-%The analyst starts by reading headlines of an article and if a significant disease incidence is discovered
-%or inferred the analysts will skim through the remainder of the article to determine if a notable event is 
-%described therein. If such an event is discovered, the analyst will extract and 
-%encode relevant information given above about that event into a GSR template. In determining disease
-%incidences, the analysts also adopt a 6-month rule. More specifically, if a news report is 
-%for the same disease, in the same city within six months of the last report, then it 
-%is not a new event and will not appear in the GSR; otherwise it is a new event and will be captured in the GSR.
-%Figure 2 shows the distribution of confirmed Hantavirus incidences in four countries of Latin America (Chile, Argentina, Brazil and Uruguay)
-%from January 2013 to March 2014.
-%
-%\begin{figure}[h!]
-%      \centering
-%          \includegraphics[width=0.5\textwidth]{fig/hanta_dist.pdf}
-%    \caption{Hantavirus Outbreak Distribution in four countries of Latin
-%  America (Chile, Argentina, Brazil, Uruguay) from January 2013 to March
-%  2014}
-%    \end{figure}
-%
-%\subsection{Evaluation Metrics}
-%
-%We adopt three key measures of performance (Quality Score, F1 score and Lead Time). Evaluation for a model is done 
-%on a monthly basis. More Specifically, the warnings and/or alerts generated from a model in a particular month
-%are evaluated against the GSR events in that month. Given our alerts, we compute the Recall and Precision at a country level, 
-%grouping together alerts for locations in the same country. Using the Recall 
-%and Precision values, we calculate the F1 score as $F_{1} = (2 * Precision * Recall) / (Precision + Recall)$.  
-%
-%We also compute an average warning quality for each country. Each prediction for a location in 
-%the country under consideration is assigned a Quality Score $Q = (4/3) * (1 + a_{loc} + a_{date})$, where $a_{loc}$
-%and $a_{date}$ denote the location and date accuracy of the prediction. For calculating $a_{loc}$ we use a three-level
-%topology. At the top level is the country, the second level is the province, state, region, or department, or the 
-%next largest administrative division, and the third level is the city. The models will generate their 
-%warning using this typology, i.e. the warning will be in the form of a triple, (country, province or state, city). 
-%For rare disease, we do not have enough resolution at the city level, so the models predict upto the state level and
-%keeps the city name "-" in the warning. The evaluation script compares the warning location with 
-%the GSR location, to get $(x_{1}, x_{2}, x_{3})$, where $x_{1}$ is the country comparison, $x_{2}$ is the province 
-%or state comparison (if the GSR has that level of specificity), and $x_{3}$ is the city comparison 
-%(if the GSR has that level of specificity). $x_{i} = 0$ if they do not match, $x_{i} = 1$ if they do. If 
-%either one of the GSR entry or the warning entry is blank and the other is not, xi = 0. If 
-%both are blank, xi = 1. The match between the warning location and the GSR 
-%location is:  
-%
-%    $a_{loc} = 1/3 x_{1} + 1/3 x_{1} x_{2} + 1/3 x_{1} x_{2} x_{3}$
-%
-%Note that if $x_{1} = 0$ (i.e. the warning misses the country level location), then $a_{loc} = 0$. If 
-%all the entries match, then $a_{loc} = 1$. Note also that a warning is penalized if it is underspecified or overspecified.
-%The $a_{date}$ is calculated as $a_{date} = 1-min(|predicted date -
-%actual event date|, 7)/7$.
-%The Quality Score takes values between 0 and 4. 
-%
-%Finally, we consider the lead time of our predictions, which is calculated as the
-%time between the alerting date in the warning and the actual date of reporting of the outbreak (not the incidence
-%date of the outbreak).
-%
-%\paragraph{\bf Mapping Warnings to Events} Since there could be multiple
-%events (and/or alerts) in a given month, a strategy is necessary to map events to alerts. We
-%conduct a maximum bipartite matching between events and alerts where i) an edge
-%exists if the alert was issued prior to the reporting date of the event, ii) the
-%weight on the edge denotes the putative quality score. 
-%
-%
-%\subsection{Model Paramater Settings}
-%
-%For the Topic Model we set Dirichlet parameter 
-%$\alpha = 2/K$ (prior on topic given location) where K is the number of topics, 
-%Dirichlet parameter $\beta = 0.01$ (prior on word given topic) and Dirichlet 
-%parameter $\gamma = 0.01$ (prior on time given topic). These Dirichlet Hyperparameter 
-%settings are typical for those used for analyzing hidden topics in datasets 
-%and will be almost similar to values that one can learn by sampling or optimization. 
-%For selecting the number of topics (K), we evaluated the Topic Model with 8, 12 and 15 topics. 
-%We find that setting $K=12$ results in more meaningful clustering of the hidden topics.  
-%
-%
-%For one-class SVM we use a parameter search algorithm to find the exact kernel and its associated 
-%set of parameters for each location and source in case of source-based model 
-%and for each location in case of location-based model. We first construct the 
-%training set based on non-disease points to be fed to the one-class SVM.
-%For each kernel ("polynomial" and "rbf") we start with a valid range of associated paramters
-%and for each combination of the parameters for each kernel, we calculate two types of error:
-%\begin{enumerate}
-%
-%  \item \textbf{Normal Error} : This error is the sum of the error in predicting 
-%    the  normal and/or non-disease points calculated via the LOOCV method.
-%  \item \textbf{Anomalous Error} : This error is the sum of the error in predicting the anomalous and/or disease points
-%\end{enumerate}
-%
-%For certain locations we may have no anomalous and/or disease points, i.e. there 
-%has been no hantavirus incidences in that location in the near past. For these 
-%locations we only consider the normal error. For locations where we have both normal 
-%and anomalous historical points, we evaluate the weighted sum of both the errors. We select 
-%the parameter combination which gives us the minimum overall error.
-%
-%For the multiplicative weights algorithm the past window size over which we 
-%calculate the accuracy of each relevant source and/or expert for a location is set
-%to be 5 months. 
-
-\subsection{Disease Topics Discovery}
-The HealthMap corpus contains mentions to multiple diseases, both common and rare, over multiple countries in Latin America. The most prevalent diseases in the dataset are the common flu, dengue fever, the swine flu (i.e., the h1n1 flu), and the hantavirus disease. While the first are widespread with a large number of incidences throughout a calendar year, hantavirus is a rather rare disease with a small number of incidences. Since we are interested in rare-diseases, we focus on the  Hantavirus of outbreaks. \Cref{fig:hanta_timeline} illustrates the number of Hantavirus outbreaks from January 2013 to March 2014 across for Chile, Argentina, Brazil and Uruguay. No Hantavirus outbreaks were reported to other countries in Latin America. We observe that the number of incidences is rather small with the majority of outbreaks occurring in Chile. Finally, we point out that no seasonal patterns governing the outbreak incidences were observed for each of the aforementioned countries.
-
-\begin{figure}[t]
-\begin{center}
-	\includegraphics[trim=0 0 0 0, clip,scale=0.6]{fig/hanta_outbreaks_timeline.eps}
-\end{center}
-\caption{Timeline of Hantavirus outbreaks from January 2013 to March 2014 for Chile, Argentina, Brazil and Uruguay. No Hantavirus outbreaks were reported for other countries in Latin America.}
- \label{fig:hanta_timeline}
-\end{figure}
-
-Given the characteristics described above, we now present the topics discovered by \model for the HealthMap corpus together with their normalized histograms over time.
-
-
 \begin{table*}[t]
 \begin{center}
 \caption{Three topics discovered by \model that are related to Hantavirus. The first two topics are related to the two different hantavirus syndromes (i.e., HPS and HFRS) and the third topic is related to generic information about the  transmission of the virus. Histograms show the topic prominence over time; The top words with their probability in each topic are shown.}
-\large{
 \begin{tabular}{|lr|lr|lr|}
 \hline
 \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_hanta_timeline.eps}} & \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_hanta3_timeline.eps}}& 
@@ -509,20 +382,36 @@ enfermos & 0.0066& provincial & 0.0028  & lixo &0.0099 \\
 hanta & 0.0068 & hantavirus & 0.0024  & criaderos & 0.0088\\
 viral & 0.0038 & tosse & 0.0022 & respiratorias & 0.0061 \\
 territorio & 0.0027 & nariz & 0.0019 & manos & 0.0056 \\
-pneumonia & 0.0014 & estonudar & 0.0011 & boca & 0.0047 \\
+pneumonia & 0.0014 & estornudar & 0.0011 & boca & 0.0047 \\
 sangre & 0.0014 & abdominal & 0.0008 & rural & 0.0038 \\
 ratones & 0.0006 & lluvia & 0.0008 & musculares & 0.0028 \\
 cardiopulmonar & 0.0002 & renal & 0.0005 & roedores & 0.0022 \\
 \hline
-\end{tabular}}
-\end{center}
+\end{tabular}
 \label{tab:hanta_topics}
+\end{center}
+\vspace{-10pt}
 \end{table*}
+
+
+\subsection{Disease Topics Discovery}
+The HealthMap corpus contains mentions to multiple diseases, both common and rare, over multiple countries in Latin America. The most prevalent diseases mentioned in the dataset are avian flu (i.e., type h5n1), dengue fever, swine flu (i.e., h1n1 flu), the hantavirus pulmonary syndrome (HPS) and the hantavirus hemorrhagic fever with renal syndrome (HFRS)~\cite{jonsson:10}. 
+
+While the first three diseases are widespread with a large number of incidences throughout a calendar year, hantavirus syndromes are rather rare with a small number of incidences. Since we are interested in rare-diseases, we focus on outbreaks related to hantaviruses. \Cref{fig:hanta_timeline} illustrates the number of hantavirus related outbreaks from January 2013 to March 2014 across for Chile, Argentina, Brazil and Uruguay. No hantavirus outbreaks were reported to other countries in Latin America. We observe that the number of incidences is rather small with the majority of outbreaks occurring in Chile. Finally, we point out that no seasonal patterns governing the outbreak incidences were observed for each of the aforementioned countries.
+
+\begin{figure}[h]
+\begin{center}
+	\includegraphics[trim=0 0 0 0, clip,scale=0.5]{fig/hanta_outbreaks_timeline.eps}
+\end{center}
+\caption{Timeline of Hantavirus outbreaks from January 2013 to March 2014 for Chile, Argentina, Brazil and Uruguay. No Hantavirus outbreaks were reported for other countries in Latin America.}
+ \label{fig:hanta_timeline}
+\end{figure}
+
+Next, we evaluate the topics discovered by \model. Six out of the twelve topics are related to the diseases mentioned above, while the rest are generic topics related to non-disease aspects of the news articles including administrative information about the reported incidents. Due to space limitations we focus only on the disease related topics. To evaluate the disease topics, we consider a vocabulary of 184 health-related words. For each topic, we examine the most likely words based on the health-related vocabulary and their prominence over time. Given a time points, we define the prominence of a topic as the fraction of articles assigned to that topic over the total number of articles published at that time point.
 
 \begin{table*}[t]
 \begin{center}
 \caption{Three topics discovered by \model that are related to Influenza (Avian Flu), dengue and Swine Flu. Histograms show the topic prominence over time; The top words with their probability in each topic are shown.}
-\large{
 \begin{tabular}{|lr|lr|lr|}
 \hline
 \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_influenza_timeline.eps}} & \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_dengue_timeline.eps}}& 
@@ -538,13 +427,20 @@ zancudos & 0.0008 & agropecuario	 & 0.0006 & nasal & 0.0008 \\
 avian & 0.0006 & hemorragias & 0.0005 & paracetamol & 0.0007 \\
 h5n1 & 0.0003 & suero & 0.0004 & swine & 0.0005 \\
 \hline
-\end{tabular}}
+\end{tabular}\label{tab:common_topics}
 \end{center}
-\label{tab:common_topics}
 \end{table*}
 
 
-\begin{figure}[t]
+\Cref{tab:hanta_topics} shows three topics related to hantavirus, their most likely words based on health-related vocabulary and their prominence histograms over time. 
+The first topic refers to the HPS syndrome with words such as ``pneumonia", ``sangre" (blood), and ``cardiopulmonar" being ranked higher. We see that \model was able to retrieve the correlation between words ``hanta" and ``ratones" (mice) successfully. The second topic focuses on the HFRS syndrome with words as  ``nariz" (nose), ``estornudar" (sneeze), ``renal" being more prevalent. Finally, the third topic focuses on the hantavirus transmission routes with words as ``lixo" (garbage), ``criaderos" (breeding places), ``manos" (hands) and ``roedores" (rodents) being ranked higher than others. According to Jonsson et al.~\cite{jonsson:10} HPS is the main syndrome observed in the Americas while HFRS cases are mainly observed in Eurasia. Thus, observing a topic focusing on HFRS for Latin America seems unexpected. However, after analyzing the actual articles in our corpus, we found that articles reporting hantavirus incidents would usually mention both forms of hantavirus syndromes for informational purposes. Focusing on the prominence histograms, we see that the HFRS and Hanta transmission topics show small fluctuations across the different time points. However, we observe that the HPS topic follows a trend similar to that of the hantavirus incidence time line. More precisely, we see that the prominence of this topics peaks towards the end of May 2013 and from December 2013 to March 2014, namely exactly during the months when the number of hantavirus incidences increases.
+
+Next, we focus on the remaining three topics focusing on diseases other than hantavirus. \Cref{tab:common_topics} shows three topics related to avian flu, dengue and swine flu. Again, we present their most likely words and their prominence histograms over time. For all three topics we see that the corresponding disease keywords, i.e., ``influenza",  ``dengue" and ``gripe" (flu) are ranked first. For the avian influenza topic, we observe that \model is able to discover the correlation among words referring to both the {\em causes}, i.e., ``mosquito", ``larvas", ``zancudos" (mosquitos), and the {\em symptoms}, i.e., ``fiebre" (fever), of the disease. Regarding the dengue topic, our approach was able to identify the main transmission root of dengue which is via the aides aegypti mosquito, as well as, the fact that dengue is more prominent in rural and agricultural areas. Finally, a similar performance is observed for the swine flu topic. \model can identify that the correlation between the word ``bacteria" and swine flu - bacteria co-infections play a key role in swine flu deaths - and the correlation between ``paracetamol" and swine flu, one of indicated medication substances for the disease.
+
+
+Finally, we examine the correlations between the discovered topics and the countries in Latin America under consideration. \Cref{fig:country_topic} shows the prominence of each topic for Brazil, Chile, Uruguay and Argentina. As expected, we observe that in Chile, HPS and HFRS are more prominent compared to other countries.
+
+\begin{figure}[h]
 \begin{center}
 	\includegraphics[trim=5 0 10 5, clip,scale=0.6]{fig/country_topic.eps}
 \end{center}
@@ -552,71 +448,58 @@ h5n1 & 0.0003 & suero & 0.0004 & swine & 0.0005 \\
  \label{fig:country_topic}
 \end{figure}
 
+\subsection{Predicting Disease Outbreaks}
+We evaluate the performance of the various disease outbreak detection algorithms focusing on Hantavirus incidences at four countries - Argentina, Chile, Uruguay and Brazil - for which cases of hantavirus outbreaks were reported. We apply BSR,  \fullmodel and \locationmodel. We evaluate the performance of \fullmodel and \locationmodel with $k \in \{5,10,20,50\}$. We use the three hantavirus topics described above to construct the necessary feature vectors for \fullmodel and \locationmodel.  \Cref{tab:results} shows the precision, recall and F1 score  of the three approaches from January 2013 to March 2014 averaged over the four countries. For \locationmodel and \fullmodel we report the results corresponding to the configuration $k$ that obtained the best performance. 
 
+\begin{table}[h]
+  %\centering
+  \caption{Performance evaluation for BSR, \locationmodel and \fullmodel on predicting Hantavirus outbreaks from January 2013 to March 2014. Notation $(k)$ denotes the best performing configuration for \locationmodel and \fullmodel}
+  \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
+    \hline
+    & \multicolumn{3}{c|}{{\bf BSR}} &
+    \multicolumn{3}{c|}{{\bf \locationmodel}} &
+    \multicolumn{3}{c|}{{\bf \fullmodel}} \\
+    \cline{2-10} {\em Month}   & {\em Prec.} & {\em Rec.} & {\em F1} & {\em Prec.} & {\em Rec.} & {\em F1} & {\em Prec.} & {\em Rec.} & {\em F1} \\
+    \hline 
+    {\bf Jan-2013} & 2.84 & 5.00 & 0.67 & 2.88 & 5.80 & 0.30 & 2.88 & 5.80 & 0.30\\ 
+    \hline
+     {\bf Feb-2013} & 3.24 & 7.0 & 0.36 & 2.92 &
+                      10.0 & 0.15 \\ 
+    \hline
+    {\bf March-2013} & 2.81 & 11.5 & 0.36 & 3.00 &
+          7.25 & 0.57 \\ 
+    \hline
+    {\bf April-2013} & 2.99 & 5.0 & 0.53 & 2.85 &
+                      5.67 & 0.35 \\ 
+    \hline
+    {\bf May-2013} & 3.01 & 4.25 & 0.43 & 2.99 &
+                      4.33 & 0.18 \\ 
+    \hline
+    {\bf June-2013} & 2.72 & 6.0 & 0.23 & 0.00 &
+                      0.00 & 0.00 \\ 
+    \hline
+    {\bf July-2013} & 2.92 & 5.0 & 0.19 & 0.00 &
+                      0.00 & 0.00 \\ 
+    \hline
+    {\bf Aug-2013} & 2.72 & 2.0 & 0.21 & 2.81 &
+                      12.00 & 0.26 \\ 
+    \hline
+    {\bf Sept-2013} & 2.47 & 5.0 & 0.49 & 2.44 &
+                      5.5 & 0.21 \\ 
+    \hline
+    {\bf Oct-2013} & 2.97 & 9.6 & 0.59 & 3.17 &
+                      10.75 & 0.19 \\ 
+    \hline
+    {\bf Nov-2013} & 2.65 & 6.8 & 0.62 & 2.87 &
+                      4.67 & 0.23 \\ 
+    \hline
+    {\bf Dec-2013} & 2.87 & 8.0 & 0.64 & 2.87 &
+                      7.1 & 0.53 \\ 
+    \hline
 
-The output of the Topic Model provides us the following information: location 
-distribution over topics, topic distribution over words and Topic Distribution 
-over time. Now the question is: How can we interpret and/or identify these hidden 
-disease topics or what is the disease focus of each hidden topic? We accumulate a fixed 
-vocabulary of health-related keywords such as "gripe" (flu), "h1n1", "dengue", "aegypti", "mosquitos",
-"hanta", "hantavirus", "roedores" (rodents) and many more. For each hidden topic, 
-we analyze the topic-word probability of these keywords to identify the disease
-focus of the topic. More Specifically, under each topic we rank the keywords 
-based on its probability values and we can infer the topic interpretation by 
-looking at the top-ranked keywords under that topic. 
-
-%\begin{figure*}[ht]
-%\begin{center}
-%        \subfigure{\includegraphics[scale=0.27]{figures/topic_12_cloud.pdf}\label{fig:topic_12_cloud}}
-%        \subfigure{\includegraphics[scale=0.27]{figures/topic_9_cloud.pdf} \label{fig:topic_9_cloud}}
-%        \subfigure{\includegraphics[scale=0.27]{figures/topic_10_cloud.pdf}\label{fig:topic_10_cloud}}
-%\end{center}
-%\caption{Word Clouds of Common Disease Topics (a) Topic 12 (Swine Flu) (b) Topic 9 (Avian Flu) (c) Topic 10 (Dengue)}
-%\label{fig:Common_clouds}
-%\end{figure*}
-%
-%\begin{figure*}[ht]
-%\begin{center}
-%        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_cloud.pdf}\label{fig:topic_2_cloud}}
-%        \subfigure{\includegraphics[scale=0.27]{figures/topic_7_cloud.pdf}\label{fig:topic_7_cloud}}
-%        \subfigure{\includegraphics[scale=0.27]{figures/topic_11_cloud.pdf}\label{fig:topic_11_cloud}}
-%\end{center}
-%\caption{Word Clouds of Hantavirus Topics (a) Topic 2 (b) Topic 7 (c) Topic 11}
-%\label{fig:Rare_clouds}
-%\end{figure*}
-%
-%\begin{figure*}[ht]
-%\begin{center}
-%        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_1.pdf}\label{fig:topic_2_1}}
-%        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_2.pdf}\label{fig:topic_2_2}}
-%        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_cloud.pdf}\label{fig:topic_2_cloud}}
-%\end{center}
-%\caption{Evolution of Hantavirus Topic (Topic 2) across the timeline (a)October 2012, (b) June 2013, (c) March 2014}
-%\label{fig:evolution_clouds}
-%\end{figure*}
-
-
-Figures 3 and 4 show the keyword clouds for the disease topics discovered from the Healthmap corpus.
-From the word clouds it is clear that the articles in the HealthMap corpus focus
-on both common disease topics like "Swine Flu", "Avian Influenza", "Dengue" and rare disease topics
-like "Hantavirus". Most of the keywords in the word clouds are in Spanish since 
-we are analyzing the Latin American News Media.   
-
-Since the focus of our work is forecasting Rare Disease (Hantavirus) outbreaks, 
-our topics of interest are Topic 2, Topic 7 and Topic 11. The top-ranked keywords 
-under these topics relate to "hanta", "ratones" (rats), "cardiopulmonar", "roedores" (rodents), "rural", 
-"hantavirus", "excrementos" (rodent droppings), "graneros" (barns),
-"campos" (fields), "lluvia" (rainfall) and "corriente" (water current). These keywords make 
-sense as Hantavirus is mainly a cardiopulmonar disease caused by infection of rodents and/or rats 
-in mainly rural areas (barns and fields). The infection is spread through rodent droppings, urine and saliva.
-The population of rodents is influenced by Rainfall and 
-thus increase in rainfall or water current is an indirect indicator of Hantavirus outbreaks.
-Figure 5 shows the evolution of Topic 2 across timepoints (Ocotber
-2012, June 2013, March 2014). It clearly depicts the fact that the hantavirus topics are becoming increasingly 
-prominent as we train the Topic Model continuously with new incoming articles along the timeline.
-
-
-\subsection{Disease Outbreak Detection Results}
+  \end{tabular}
+  \label{tab:results}
+\end{table}
 
 For Disease Outbreak Detection we focus on four countries - Argentina,
 Chile, Uruguay and Brazil for which Cases of hantavirus outbreaks were reported
@@ -645,10 +528,9 @@ warnings and events and the best possible matching is selected while
 calculating QS. Thats the reason L-STAT model is better than S-STAT in
 terms of QS for certain months.
 
-\begin{table}
+\begin{table}[h]
   %\centering
-  \caption{Performance results for S-STAT and L-STAT in terms of
-  detecting hantavirus incidences}
+  \caption{Performance evaluation for BSR, \locationmodel and \fullmodel on predicting Hantavirus outbreaks in Chile, Argentina, Brazil and Uruguay from January 2013 to March 2014.}
   \begin{tabular}{|c|c|c|c|c|c|c|}
     \hline
     {\bf Month} & \multicolumn{3}{c|}{{\bf S-STAT}} &
@@ -699,11 +581,6 @@ terms of QS for certain months.
 {\bf (*Table to be expanded, per country evaluation to be added, base rate
 model results to be added, LS values to be given as a separate
 evaluation metric*)}
-
-\subsection{Model evaluation in capturing base rate changes in Chile and
-argentina}
-
-To be added.
 
 \subsection{Analysis of Sources and/or Experts}
 
