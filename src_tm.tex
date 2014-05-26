@@ -33,7 +33,9 @@
     \end{list}  }
 
 
-\newcommand{\model}{{S-STAT}\xspace} %stat is an abbreviation for statim which means immediately in latin
+\newcommand{\model}{{STAT}\xspace} %stat is an abbreviation for statim which means immediately in latin
+\newcommand{\fullmodel}{{S-STAT}\xspace}
+\newcommand{\locationmodel}{{L-STAT}\xspace}
 \newcommand{\w}{{\bf w}}
 \newcommand{\z}{{\bf z}}
 \newcommand{\loc}{{\bf l}}
@@ -47,7 +49,7 @@
 %\crdata{0-12345-67-8/90/01}  % Allows default copyright data (0-89791-88-6/97/05) to be over-ridden - IF NEED BE.
 % --- End of Author Metadata ---
 
-\title{\model: Forecasting Rare Disease Outbreaks with Source Based Spatio-temporal Topic Models}
+\title{\fullmodel: Forecasting Rare Disease Outbreaks with Source Based Spatio-temporal Topic Models}
 
 %\author{
 %% 1st. author
@@ -96,53 +98,33 @@
 \maketitle
 \begin{abstract}
 Rapidly increasing volumes of news feeds from diverse data sources, such as online newspapers, Twitter and online blogs are proving to be extremely valuable resources in helping anticipate, detect, and forecast outbreaks of rare diseases. This paper presents a spatio-temporal topic model over data sources that enables the effective monitoring of disease emergence and progression by capturing spatial and temporal topic trends. The new model is capable of discovering the location focus of each source allowing sources to be used as experts with varying degrees of authoritativeness when predicting location-specific disease outbreaks. For each source, we show how the extracted topic evolution and source's-spatial focus can be used for making near-term predictions of a disease outbreak being reported by the source. To fuse the individual source predictions into a final outbreak prediction we employ a multiplicative weights algorithm taking into account the accuracy of each source. We demonstrate the effectiveness of our proposed techniques using incidence data for Hantavirus in multiple countries of Latin America provided by HealthMap over a timespan of one year.
-
-%Rapidly increasing volumes of news feeds from diverse data sources, such as online newspapers, Twitter and online blogs are proving to be extremely valuable resources in helping anticipate, detect, and forecast outbreaks of rare diseases. Especially, aggregating and analyzing the shared information from all available data sources collectively enables the effective monitoring of disease emergence and progression.
-%
-%In this paper, we introduce a spatio-temporal topic model over data sources that captures not only the low-dimensional structure of data, but also the spatial and temporal topic trends. The new model is capable of discovering the location and topic focus of each source, allowing us to use sources as experts with varying degrees of authoritativeness when predicting disease outbreaks. More precisely, we integrate the proposed topic model with one-class SVMs, so that modeling the underlying topic evolution and forecasting its prominence can be used as a surrogate for making near-term predictions of disease outbreaks. Finally, we employ a multiplicative weights algorithm to fuse the predictions from different sources for obtaining a final outbreak prediction while taking into account the accuracy of each individual source. We demonstrate the effectiveness of our proposed techniques using incidence data for Hantavirus in multiple countries of Latin America over a timespan of one year.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 There has been a growing interest in developing statistical models for detecting infectious diseases outbreaks to enable effective control measures to be taken in a sufficiently timely fashion. Most of the early approaches targeted specific diseases and relied on highly specialized data, including medical records or environmental time series~\cite{wong:02,wong:03}.  Recently, however, there has been a growing interest in monitoring disease outbreaks using publicly available data on the Web, including news articles~\cite{brownstein:2008,linge:09}, blogs~\cite{corley:10}, search engine logs~\cite{ginsberg:09} and micro-blogging services, such as Twitter~\cite{culotta:2010}. Due to their volume, ease of availability, and citizen participation, such {\em open source indicators} have been shown to be quite effective at monitoring disease emergence and progression.
 
-Most of the proposed techniques rely on identifying specific keywords related to a set of predefined diseases and try to detect anomalous patterns over time with respect to the mention frequency of these keywords. While effective at detecting outbreaks of common diseases, such as influenza, the above techniques have significant limitations at predicting outbreaks of {\em rare}, yet deadly, diseases, such as Hantavirus. Since rare disease incidences are scarce, related keywords are sparsely distributed over time. Thus, it is difficult for keyword based techniques to identify temporal patterns and detect the emergence of an outbreak in a timely manner. To address this limitation, researchers have employed models that identify temporal trends over {\em groups of words}, such as temporal topic models~\cite{paul:11} or frequent word-set mining~\cite{parker:13}. Both approaches rely on detecting co-occurence patterns of sets of words over time to discover the emergence and track the evolution of diseases. 
+Most of the proposed techniques rely on identifying specific keywords related to a set of predefined diseases and try to detect anomalous patterns over time with respect to the mention frequency of these keywords. While effective at detecting outbreaks of common diseases, such as influenza, the above techniques have significant limitations at predicting outbreaks of {\em rare}, yet deadly, diseases, such as Hantavirus. Since rare disease incidences are scarce, related keywords are sparsely distributed over time. Thus, it is difficult for keyword based techniques to identify temporal patterns and detect the emergence of an outbreak in a timely manner. To address this limitation, researchers have employed models that identify temporal trends over {\em groups of words}, such as temporal topic models~\cite{paul:11} or frequent word-set mining~\cite{parker:13}. Both approaches rely on detecting co-occurrence patterns of word-sets over time to discover the emergence and track the evolution of diseases. 
 
 Most of the aforementioned approaches are mainly used to detect generic disease trends and focus on discovering trends within a set of closely correlated locations, i.e., regions within a specific country and not across countries. However, rare disease topics may follow significantly different patterns when considering diverse locations. For example, Hantavirus outbreaks are more prominent in the Americas as opposed to Europe, and more notably, the rate of outbreaks across countries in the Americas varies significantly~\cite{jonsson:10}. Thus, not modeling the spatial correlations among disease outbreaks can confound outbreak patterns and result in unclear and sub-optimal location specific outbreak predictions. 
 
 Finally, when analyzing publicly available data from multiple sources, it is of high-importance to take into account the quality (i.e., accuracy or authoritativeness) of each source when predicting disease outbreaks. For example, when monitoring and forecasting Hantavirus incidences in Chile, considering only data provided by localized sources, such as local news papers, may lead to higher accuracy than aggregating all Hantavirus-related news articles by sources across the world. Nonetheless, all previous approaches assume that all sources (e.g., blogs or Twitter users) have the same accuracy and aggregate the available data when forecasting an outbreak. 
 
-In this paper, we focus on the problem of location-specific disease outbreak predictions across a diverse set of locations by analyzing a dynamic corpus of publicly available news articles. In particular, we assume a stream of news articles updated every week, and our goal is to analyze news articles up to a certain week to predict disease outbreaks for the forthcoming week. Under this scenario the problem of predicting outbreaks can be decomposed in two major components: (a) that of analyzing past data to detect spatio-temporal patterns over the available news articles and (b) that of predicting new outbreaks for the forthcoming week. 
+In this paper, we focus on the problem of location-specific disease outbreak predictions across a diverse set of locations by analyzing a dynamic corpus of publicly available news articles. In particular, we assume a stream of news articles updated every week, and our goal is to analyze news articles up to a certain week to predict disease outbreaks for the forthcoming week. Under this scenario the problem of predicting outbreaks can be decomposed in two major components: (a) that of analyzing past data to detect spatio-temporal patterns over the available news articles and (b) that of predicting new outbreaks for the forthcoming week. To address the aforementioned problems we introduce a novel combination of Source-based anomaly detection techniques with {\em Spatio-TemporAl Topic} models (\fullmodel).
 
-To analyze the content of past news articles, we model data sources as {\em evolving documents} over time, and introduce the {\em Source based Spatio-TemporAl Topic} model (\model), a novel topic model that explicitly models time and location jointly with word co-occurrence patterns.  At a high-level the model's generative process is as follows: Each data source article is associated with an observed location. A per-location multinomial distribution over topics is sampled from a Dirichlet prior and a topic is sampled by the topic multinomial distribution corresponding to the assigned location; next two different per-topic multinomials generate the word and time point associated with each entry.  \model naturally captures the fact that topics exhibit different prominence levels at different locations and different time points. 
+To analyze the content of past news articles, we model data sources as {\em evolving documents} over time, and introduce a {\em Spatio-TemporAl Topic} model (\model) that explicitly models time and location jointly with word co-occurrence patterns.  At a high-level the model's generative process is as follows: Each data source article is associated with an observed location. A per-location multinomial distribution over topics is sampled from a Dirichlet prior and a topic is sampled by the topic multinomial distribution corresponding to the assigned location; next two different per-topic multinomials generate the word and time point associated with each entry. \model naturally captures the fact that topics exhibit different prominence levels at different locations and different time points. 
 
-To predict a disease outbreak at a certain location, we consider each source as an independent expert.  In conjunction with \model, we learn the correlations between location and sources, and use these correlations with the output of the topic model to estimate the {\em topic focus} of each source at future time points.  We use one-class SVMs~\cite{schoelkopf:99} over the estimated topic focus of each source, to detect any per source anomalous topic prominence that constitutes an early indicator of the onset of an outbreak. Finally,  we fuse the individual source predictions into a single final prediction using weighted majority voting where a multiplicative weights algorithm~\cite{arora:2012} is used to learn the vote weight of each source. The aforementioned approach naturally captures the fact that most data sources, such as news papers, provide sufficient coverage only for a specific set of locations that is fixed over time.
+To predict a disease outbreak at a certain location, we consider each source as an independent expert.  In conjunction with \model, we learn the correlations between location and sources, and use these correlations with the output of the topic model to estimate the {\em topic focus} of each source at future time points.  We use one-class SVMs~\cite{schoelkopf:99} over the estimated topic focus of each source, to detect any per source anomalous topic prominence that constitutes an early indicator of the onset of an outbreak. Finally,  we fuse the individual source predictions into a single final prediction using weighted majority voting where a multiplicative weights algorithm~\cite{arora:2012} is used to learn the vote weight of each source. The aforementioned approach, referred to as \fullmodel, naturally captures the fact that most data sources, such as news papers, provide sufficient coverage only for a specific set of locations that is fixed over time.
 
 The main contributions of our proposed method are as follows:
 \squishlist
-\item {\em Effectiveness:} \model operates on large collections of news articles and can clearly identify topics related to rare diseases, as well as, the topic spatio-temporal patterns present in the available news articles. 
+\item {\em Effectiveness:} \fullmodel operates on large collections of news articles and can clearly identify topics related to rare diseases, as well as, the topic spatio-temporal patterns present in the available news articles. 
 \item {\em Diversity:} Our model enables rare-disease forecasting for a diverse set of locations with significantly different outbreak patterns under a unified scheme. 
 \item {\em Accuracy:} As we illustrate in an extensive experimental evaluation, considering the spatial focus and accuracy of each data source offers improved accuracy in forecasting disease outbreaks as opposed to analyzing the input of all sources for a specific location in a collective manner. 
 \squishend
 
-%
-%In conjunction with \model we explicitly learn the correlations between locations and sources, enabling us to assess the authoritativeness and accuracy of each source for a specific location. The latter allows us to consider each source as an expert and fuse their individual predictions to obtain increased accuracy. 
-%
-%\ \\\textcolor{red}{Describe input setup better. Stream of news articles obtained once per week and then performing analysis to predict for a proceeding week. Under this scenario problem of predicting outbreaks decomposed to analyzing and detecting temporal patterns and predicting outbreaks.}
-%
-%\ \\\textcolor{red}{High-level description of framework, i.e., topic model, prediction, fusion.} 
-%
-%\ \\\textcolor{red}{Contributions}
-%
-%More precisely, we model data sources as {\em evolving documents} over time, and introduce the {\em Source based Spatio-TemporAl Topic} model (\model), a topic  model that explicitly models time and location jointly with word co-occurrence patterns. \model also models the correlations between locations and sources, enabling us to assess the authoritativeness and accuracy of each source for a specific location. The latter allows us to consider each source as an expert and fuse their individual predictions to obtain increased accuracy. 
-%
-%
-%To predict a disease outbreak for a specific location at a future time point, we consider each source as an expert and integrate \model with one-class SVMs~\cite{schoelkopf:99} to detect any per source anomalous topic prominence that constitutes an early indicator of the onset of an outbreak. Finally, we employ a multiplicative weights algorithm~\cite{arora:2012} to learn the accuracy of each source and fuse the predictions corresponding to individual sources into a single final prediction using weighted majority voting.
-
-The remainder of the paper is organized as follows: (a) we first provide an overview of the problem of rare disease forecasting by analyzing data from multiple sources (\Cref{sec:problem}), (b) we then present the \model topic model ( \Cref{sec:model}), (c) and the proposed disease prediction model (\Cref{sec:pred}), (d) followed by an experimental evaluation (\Cref{sec:exp}) on the effectiveness of the proposed framework for forecasting Hantavirus outbreaks in Latin America. 
-
-%analyzing a corpus of public health-related news articles from January 2013 to January 2014, drawn from HealthMap \footnote{http://healthmap.org}~\cite{healthmap}, a prominent online source of news articles and tweets for disease outbreak monitoring and real-time surveillance of emerging public health threats.
-
+The remainder of the paper is organized as follows: (a) we first provide an overview of the problem of rare disease forecasting by analyzing data from multiple sources (\Cref{sec:problem}), (b) we then present the \model topic model ( \Cref{sec:model}), (c) and the proposed disease prediction model \fullmodel (\Cref{sec:pred}), (d) followed by an experimental evaluation (\Cref{sec:exp}) on the effectiveness of the proposed framework for forecasting Hantavirus outbreaks in Latin America. 
+s
 \section{Detecting Rare Diseases}
 \label{sec:problem}
 In this section, we discuss the problem of forecasting rare disease outbreaks when analyzing data from multiple sources. We consider a continuously updated collection of time-stamped event articles from a collection of data source $S$, referring to a set of locations $L$, containing words from a vocabulary $V$. We assume a discretization of time and consider that new data entries are added in batches over intervals of fixed time. For example, these time intervals may correspond to a specific day or week. For the remainder of the paper we will consider a time granularity of one week, defined as the 7-day period from Sunday to Saturday referred to as an {\em epidemiological week}, or {\em epi-week} for short. 
@@ -157,13 +139,6 @@ Given a time point $T$, we partition the data across different sources in $S$ an
 
 We continue our discussion by analyzing our proposed solution for each of the two problems in detail. 
 
-%\subsection{Solution Overview}
-%The different steps of the proposed approach for solving the two problems posed above are:
-%\squishlist
-%\item {\bf Step 1:} We use \model over the historical input data to discover the hidden disease topics and spatio-temporal trends. A detailed description of \model is provided in \Cref{sec:model}.
-%\item {\bf Step 2:} We consider each source as an expert and use the output of \model together with one-class SVMs~\cite{schoelkopf:99} (OCSVM) to detect anomalies in each source at future time-points that indicate the emergence of a disease outbreak (see \Cref{sec:source_pred}). Intuitively, anomalous points correspond to time points at which the content of a source exhibits a sudden increase in its relevance to a disease topic. 
-%\item {\bf Step 3:} Given the individual predictions from each source we use a randomized weighted majority voting algorithm~\cite{arora:2012} to learn the accuracy of each source and fuse the individual predictions together (see \Cref{sec:integration}).
-%\squishend
 \section{Source Based Spatio-temporal \\ Topic Models}
 \label{sec:model}
 In this section, we describe our method, \model, for dealing with the topic and pattern discovery problem. \model is a topic model that explicitly models time and location jointly with the word co-occurence patterns. Before introducing the \model model, we briefly review two topic models related to \model, i.e., the basic Latent Dirichlet Allocation (LDA) model~\cite{blei:2003} and the Author-Topic (AT) model~\cite{rosen:2004}. The graphical model representations of LDA and AT are shown in \Cref{fig:lda_model} and \Cref{fig:at_model} respectively.
@@ -176,11 +151,11 @@ In \model, sources are viewed as dynamic documents and locations as authors simi
 
 \begin{figure*}[ht]
 \begin{center}
-        \subfigure{\includegraphics[trim = 40mm 35mm 80mm 25mm, clip, scale=0.4]{fig/lda_model.pdf} \label{fig:lda_model}}
-        \subfigure{\includegraphics[trim = 40mm 35mm 70mm 25mm, clip, scale=0.4]{fig/at_model.pdf} \label{fig:at_model}}
-        \subfigure{\includegraphics[trim = 30mm 35mm 70mm 25mm, clip, scale=0.4]{fig/stm_model.pdf} \label{fig:stm_model}}
+        \subfigure{\includegraphics[trim = 40mm 35mm 80mm 25mm, clip, scale=0.4]{fig/lda_model.eps} \label{fig:lda_model}}
+        \subfigure{\includegraphics[trim = 40mm 35mm 70mm 25mm, clip, scale=0.4]{fig/at_model.eps} \label{fig:at_model}}
+        \subfigure{\includegraphics[trim = 30mm 35mm 70mm 25mm, clip, scale=0.4]{fig/stm_model.eps} \label{fig:stm_model}}
 \end{center}
-\caption{Plate notation for three topic models: (a) Latent Dirichlet Allocation Model. (b) Author-Topic Model. (c) S-STAT Model.}
+\caption{Plate notation for three topic models: (a) Latent Dirichlet Allocation Model. (b) Author-Topic Model. (c) \model Model.}
 \label{fig:models}
 \end{figure*}
 
@@ -197,7 +172,6 @@ V & Number of words \\
 T & Number of discrete time-points \\
 L & Number of locations \\
 $N_s$ & Number of entries in each source $s$\\
-$\psi_s$ & The multinomial distribution of locations specific to source $s$\\
 $\theta_l$ & The multinomial distribution of topics specific to location $l$\\
 $\phi_z$ & The multinomial distribution of words specific to topic $z$\\
 $\xi_z$ & The multinomial distribution of time-points specific to topic $z$\\
@@ -208,8 +182,7 @@ $t_{si}$ & The time-point associated with the $i$th entry from source $s$ \\
 \hline
 \end{tabular}
 \label{tab:notation}
-\end{table*}
-
+\end{table*}\vspace{-10pt}
 \ \\{\bf \model generative proceess}
 \begin{enumerate}
 \item Draw $K$ multinomials $\phi_z$ from a Dirichlet prior $\beta$, one for each topic $z$;
@@ -226,25 +199,23 @@ $t_{si}$ & The time-point associated with the $i$th entry from source $s$ \\
 Each source entry is associated with a location $l_{si} \in L$ and we consider a distribution $\theta_{l_{si}}$ over topics that is randomly sampled from a Dirichlet with parameter $\alpha$. To generate each entry $i \in N_s$ for source $s$, first, a topic $z_{si}$ is chosen from the topic distribution $\theta_{l_{si}}$, and then, a word $w_{si}$ and time-point $t_{si}$ are generated by randomly sampling from the topic-specific multinomial distributions $\phi_{z_{si}}$ and $\xi_{z_{si}}$.  In our experiment we assume a fixed number of topics $K$.
 
 As described in the above generative process, the posterior distribution of topics depends on the information from three modalities, i.e., the text, location and time. \model parametrization is:
-\begin{align}
-\theta_{l}|\alpha & \sim {\sf Dirichlet}(\alpha) \nonumber \\
-\phi_{z}|\beta & \sim {\sf Dirichlet}(\beta) \nonumber \\ 
-\xi_{z}|\gamma & \sim {\sf Dirichlet}(\gamma) \nonumber \\
-z_{si}|l_{si},\theta_{l_{si}} & \sim {\sf Multinomial}(\theta_{l_{si}}) \nonumber \\
-w_{si}|\phi_{z_{si}} & \sim {\sf Multinomial}(\phi_{z_{si}}) \nonumber \\
-t_{si}|\xi_{z_{si}} & \sim {\sf Multinomial}(\xi_{z_{si}}) \nonumber
-\end{align}
 
-%The multinomial distribution over locations can be learned directly by the available data $N_s$ for each source. More precisely, given a source $s \in S$ we compute each parameter $p_{s,l}$ of the multinomial $\psi_s$  for each location $l \in L$ by taking its maximum likehood estimate, i.e., $p_{s,l} = {p}^{ML}_{s,l} = \frac{N_{l,s}}{N_{s}}$, where $N_{l,s}$ denotes the number of entries in $N_s$ associated with location $l$ and $N_s$ the total number of entries provided by source $s$.
-As inference cannot be done exactly in \model, we employ a Gibbs sampling algorithm to perform approximate inference. Using a Dirichlet conjugate prior for the multinomial distributions allows us to easily integrate out $\theta$, $\phi$ and $\xi$.  In the Gibbs sampling procedure for estimating the parameters in \model, we need to calculate the conditional probability distribution $\Pr(z_{si}|{\bf w},{\bf t}, {\bf l}, {\bf z}_{-si}, \alpha, \beta, \gamma, {\bf \Psi})$ where ${\bf z}_{-si}$ represents the topic assignments for all entries in $s$ except the $i$-th entry. We begin with the joint probability of a data set and using the chain rule we obtain the conditional probability as:
+{\small
+\begin{align}
+\theta_{l}|\alpha & \sim {\sf Dirichlet}(\alpha) &&  \phi_{z}|\beta \sim {\sf Dirichlet}(\beta) \nonumber \\
+\xi_{z}|\gamma & \sim {\sf Dirichlet}(\gamma) &&  z_{si}|l_{si},\theta_{l_{si}} \sim {\sf Multinomial}(\theta_{l_{si}}) \nonumber \\
+w_{si}|\phi_{z_{si}} & \sim {\sf Multinomial}(\phi_{z_{si}}) && t_{si}|\xi_{z_{si}} \sim {\sf Multinomial}(\xi_{z_{si}}) \nonumber
+\end{align}}
+
+As inference cannot be done exactly in \model, we employ a Gibbs sampling algorithm to perform approximate inference. Using a Dirichlet conjugate prior for the multinomial distributions allows us to easily integrate out $\theta$, $\phi$ and $\xi$.  In the Gibbs sampling procedure for estimating the parameters in \model, we need to calculate the conditional probability distribution $\Pr(z_{si}|{\bf w},{\bf t}, {\bf l}, {\bf z}_{-si}, \alpha, \beta, \gamma)$ where ${\bf z}_{-si}$ represents the topic assignments for all entries in $s$ except the $i$-th entry. We begin with the joint probability of a data set and using the chain rule we obtain the conditional probability as:
 \begin{align}
 \label{eq:conditional}
-&\Pr(z_{si}| \w,\tim,\loc,\z_{-si};\alpha,\beta,\gamma,\Psi) \nonumber \\
-&= \frac{\Pr(z_{si}, w_{si}, t_{si}, l_{si}|\w_{-si},\tim_{-si},\loc_{-si},\z_{-si};\alpha,\beta,\gamma,\Psi)}{\Pr(w_{si}, t_{si}, l_{si}|\w_{-si},\tim_{-si},\loc_{-si},\z_{-si};\alpha,\beta,\gamma,\Psi)} \nonumber \\
+&\Pr(z_{si}| \w,\tim,\loc,\z_{-si};\alpha,\beta,\gamma) \nonumber \\
+&= \frac{\Pr(z_{si}, w_{si}, t_{si}|\w_{-si},\tim_{-si},\loc,\z_{-si};\alpha,\beta,\gamma)}{\Pr(w_{si}, t_{si}|\w_{-si},\tim_{-si},\loc,\z_{-si};\alpha,\beta,\gamma)} \nonumber \\
 & \propto \frac{n^{k,-(s,i)}_{w_{si}} + \beta_{w_{si}}}{\sum_{r = 1}^V n^{k,-(s,i)}_{r} + \beta_{r}} \cdot \frac{m^{k,-(s,i)}_{t_{si}} + \gamma_{t_{si}}}{\sum_{t = 1}^T m^{k,-(s,i)}_{t} + \gamma_{t}} \nonumber \\
 & \cdot \frac{o^{k,-(s,i)}_{l_{si}} + \alpha_{l_{si}}}{\sum_{l = 1}^L o^{k,-(s,i)}_{l} + \alpha_{l}}
 \end{align}
-where $n^{z}_{r}$ denotes the number of times word $r$ was associated with topic $z$ across all sources and entries, $m^{z}_{t}$ denotes the number of times time-point $t$ was associated with topic $z$ across all sources, $o^z_l$ denotes the number of times location $l$ was associated with topic $z$ across all sources and their entries, and $-si$ in the superscript indicates that the current example has been excluded by the count summations. Notice, that since the location for the $(s,i)$-th entry is observed the distribution $\psi_s$ can be considered as a constant. A detailed derivation of Gibbs sampling for \model is provided in \Cref{sec:gibbs}. 
+where $n^{z}_{r}$ denotes the number of times word $r$ was associated with topic $z$ across all sources and entries, $m^{z}_{t}$ denotes the number of times time-point $t$ was associated with topic $z$ across all sources, $o^z_l$ denotes the number of times location $l$ was associated with topic $z$ across all sources and their entries, and $-si$ in the superscript indicates that the current example has been excluded by the count summations. A detailed derivation of Gibbs sampling for \model is provided in \Cref{sec:gibbs}. 
 
 Once the sampler has converged, we can estimate the parameters of the multinomials $\theta$, $\phi$, and $\xi$ as follows:
 \begin{align}
@@ -264,7 +235,7 @@ The Gibbs sampling approximate inference for \model procedure is shown in Algori
 \FORALL {$j$ to $N_{iter}$}
     \FORALL {$s \in S$}
     	\FORALL {$i \in N_s$}
-		\STATE Draw $z_{si}$ from $\Pr(z_{si}| \w,\tim,\loc,\z_{-si};\alpha,\beta,\gamma,\Psi)$
+		\STATE Draw $z_{si}$ from $\Pr(z_{si}| \w,\tim,\loc,\z_{-si};\alpha,\beta,\gamma)$
 		\STATE Update the counts $n^{z}_{r}$, $m^{z}_{t}$ and $o^z_l$
 	\ENDFOR	
     \ENDFOR
@@ -278,14 +249,14 @@ The Gibbs sampling approximate inference for \model procedure is shown in Algori
 
 \section{Predicting Disease Outbreaks}
 \label{sec:pred}
-In this section, we describe how the posterior distributions learned by \model can be used to forecast outbreaks at a future time point $t$ for the set of locations present in $\mathcal{X}$. 
-First, we show how to extract individualized predictions for each source-location pair in $\mathcal{P} = \bigcup_{s \in S}s \times L_s$ by detecting source content anomalies that indicate the emergence of a disease outbreak. Then, we present a randomized weighted majority voting algorithm for learning the accuracy of each source-based predictor for a certain location and fusing the individual source predictions.
+In this section, we describe how \fullmodel uses the posterior distributions learned by \model to forecast outbreaks at a future time point $t$ for the set of locations present in $\mathcal{X}$. 
+First, we show how to extract individualized predictions for each source-location pair in $\mathcal{P} = \bigcup_{s \in S}s \times L_s$ by detecting source content anomalies that indicate the emergence of a disease outbreak. Then, we present a weighted majority voting algorithm for learning the accuracy of each source-based predictor for a certain location and fusing the individual source predictions.
 
 \subsection{Source-based Outbreak Predictions}
 \label{sec:source_pred}
 Detecting an anomaly in the content of a source $s$ for a location $l$, requires reasoning about the relevance of the source's content to the discovered disease topics. We cast the latter problem as an instantiation of the {\em document classification}~\cite{strehl:2000} problem and show how the relevance between the content of a source and a topic can be instantiated using the {\em cosine similarity metric}.
 
-For each topic $z \in K$, \model learns a distribution $\phi_z$ over all words in the vocabulary $V$. Moreover, following a similar approach to Matsubara et al.~\cite{matsubara:2012}, we extract the average occurrence rate $\bar{x}_w$ for each word $w \in V$ across all entries. Combining the above, one can construct an {\em average representative document} for each topic $z \in Z$, characterized by a vector $F_z$ that contains the expected occurrence frequency of each word $w \in V$ given the topic. In particular, we define the $w$-th entry of $F_z$ corresponding to word $w$ as $F_z,w = \bar{x}_w \cdot \phi_{z,w}$. Similarly, given the content source $s$ for a location $l$ at time $t$, one can derive a word frequency vector $F_{s,l,t}$ characterizing the content. Given the vectors $F_z$ and $F_{s,l,t}$ we define the relevance of the content of source $s$ for location $l$ at time $t$ to topic $z$ as:
+For each topic $z \in K$, \model learns a distribution $\phi_z$ over all words in the vocabulary $V$. Moreover, following a similar approach to Matsubara et al.~\cite{matsubara:2012}, we extract the average occurrence rate $\bar{x}_w$ for each word $w \in V$ across all entries. Combining the above, one can construct an {\em average representative document} for each topic $z \in Z$, characterized by a vector $F_z$ that contains the expected occurrence frequency of each word $w \in V$ given the topic. In particular, we define the $w$-th entry of $F_z$ corresponding to word $w$ as $F_z,w = \bar{x}_w \cdot \phi_{z,w}$. Similarly, given a source $s$,  a location $l$ and a time point $t$, one can characterize the content of a source with a word frequency vector $F_{s,l,t}$. Given the vectors $F_z$ and $F_{s,l,t}$ we define the relevance of the content of source $s$ for location $l$ at time $t$ to topic $z$ as:
 \begin{equation}
 {\sf Relevance}(s,z;l,t) = {\sf CosineSimilarity}(F_{s,l,t},F_z)
 \end{equation}
@@ -298,307 +269,290 @@ However, we want to predict disease outbreaks at future time points when the con
 Therefore, given a source $s$, a location $l$ and a future time point $t$, we estimate 
 the entries of $F_{s,l,t}$ by considering the expected frequency of each word. 
 More precisely, let $\hat{F}_{s,l,t}[w]$ denote the expected frequency for word 
-$w \in V$. To compute the expected frequency for $w$, we need to consider the 
-probability of source $s$ publishing at a future timepoint $t$ mentioning the word $w$, denoted by $\Pr(t|s)$ unique to that word $w$, the 
-probability of source $s$ publishing in the location $l$ mentioning the word $w$, denoted by $\Pr(l|s)$ unique to that word $w$ and 
+$w \in V$. To compute the expected frequency $\hat{F}_{s,l,t}[w]$, we need to consider the 
+conditional probability that source $s$ will mention word $w$ at a future time point $t$, denoted by $\Pr(t|s,w)$, the 
+conditional probability that source $s$ will publish word $w$ in an article related to the location $l$, denoted by $\Pr(w|s,l)$, and 
 the probability that word $w$ was generated by any topic $z \in K$, given location $l$ and time point $t$. 
 More precisely, we have that:
 \begin{equation}
-  \hat{F}_{s,l,t}[w] = \bar{x}_{w} \cdot \Pr(t|s) \cdot \Pr(l|s)\cdot \sum_{z \in K}\phi_{z,w}\cdot \theta_{l,z} \cdot \xi_{z,t}
+  \hat{F}_{s,l,t}[w] = \bar{x}_{w} \cdot \Pr(t|s,w) \cdot \Pr(w|s,l)\cdot \sum_{z \in K}\phi_{z,w}\cdot \theta_{l,z} \cdot \xi_{z,t}
 \end{equation}
-where $\bar{x}_{w}$ denotes the average rate of occurrences of word $w$ in $\mathcal{X}$,  
-$\phi_{z,w}$, $\theta_{l,z}$, and $\xi_{z,t}$, can be retrieved by the output of \model,  
-and $\Pr(l|s)$ for a word $w$ can be written as:
+where $\bar{x}_{w}$ denotes the average rate of occurrences of word $w$ in $\mathcal{X}$,  and 
+$\phi_{z,w}$, $\theta_{l,z}$, and $\xi_{z,t}$, can be retrieved by the output of \model.  Given the historical data, we estimate the probability $\Pr(w|l,s)$ with its maximum likelihood as:
 \begin{equation}
-  \Pr(l|s) = \frac{n_{w,s,l}}{\sum_{w\in V}n_{w,s,l}}
+  \Pr(w|s,l) = \frac{n_{w,s,l}}{\sum_{w\in V}n_{w,s,l}}
 \end{equation}
-where, $n_{w,s,l}$ denotes the number of mentions of $w$ from $s$ in $l$.
+where $n_{w,s,l}$ denotes the number of mentions of word $w$ from source $s$ in location $l$.
 Notice that $\xi_{z,t}$, i.e., the probability of topic $z$ being prominent at time $t$, 
-and $\Pr(t|s)$ correspond to future time points and need to be estimated.  
+and $\Pr(t|s,w)$ correspond to future time points and need to be estimated.  
 
 According to the problem description in \Cref{sec:problem}, the available historical 
 data spans up to time point $t-1$. Thus, we estimate the probability of the source 
-publishing  at a future time $t$ mentioning a particular word $w$ by considering the weighted average rate of the source mentioning that word:
+mentioning a particular word $w$ at a future time $t$ by considering the weighted average occurrence rate of word $w$ in the source. We have:
 \begin{equation}
-\Pr(t|s) = \frac{\sum_{\tau = 1}^{t-1} \frac{1}{t - \tau}I(\tau,s)}{\sum_{\tau = 1}^{t-1} \frac{1}{t - \tau}}
+\Pr(t|s,w) = \frac{\sum_{\tau = 1}^{t-1} \frac{1}{t - \tau}I(\tau,s,w)}{\sum_{\tau = 1}^{t-1} \frac{1}{t - \tau}}
 \end{equation}
-where $I(s,\tau)$ is an indicator variable equal to one if the source $s$ mentioned the word $w$ in an article at the time $\tau$ and zero otherwise. 
-To estimate the probability $\xi_{z,t} \mbox{with } z \in \{1, 2, \dots, K\}$, 
+where $I(s,\tau,w)$ is an indicator variable equal to one if source $s$ mentioned word $w$ at least once at time $\tau$, and zero otherwise. 
+To estimate the probability $\xi_{z,t} \mbox{ with } z \in \{1, 2, \dots, K\}$, 
 we use the values of distribution $\xi_{z}, \forall z \in K$ corresponding to past time points. In particular, we use an autoregressive model over the values of topic $z$ for the $n$ previous time intervals, denoted by $\xi_{z,t-1},\xi_{z,t-2},\dots,\xi_{z,t-N}$.We have:
 \begin{equation}
 \xi_{z,t}=a_1 \cdot \xi_{z,t-1}+a_2\cdot \xi_{z,t-2}+\dots +a_n\cdot \xi_{z,t-n}
 \end{equation}
-where $a_1,a_2,.....,a_n$ are the regression coefficients.
+where $a_1,a_2,.....,a_n$ are the regression coefficients.  We compute the source-topic relevance for each source-location and topic combination using the aforementioned techniques.
 
+Finally, to detect if the source-topic relevance for a future time point constitutes an anomalous points we use one-class SVMs~\cite{schoelkopf:99} (OCSVM). A OCSVM maps input data $X$ into a high dimensional feature space $H$ via a kernel $\Phi: X \rightarrow H$ and finds the maximal margin hyperplane which best separates the training data from the origin. The classification rule corresponds to $f(x) = {\sf sign}(\mathbf{w}\Phi(x) - b)$, where $\mathbf{w}$ is a weight vector and $b$ is a bias term. We use this classification rule to detect if a new point $x$ is an anomalous point (i.e., $f(x) < 0$). 
 
-%Similarly, given the set of words present in the articles provided by source $s$ for a location $l$ at time $t$, one can derive a source-location based distribution $P({\bf w};s,l,t)$ over all words in $V$ as described below.  Given $\phi_z$ and $P({\bf w};s,l,t)$ we define the relevance of a topic $z$ to source $s$ for location $l$ as the normalized distance between the distributions $\phi_z$ and $P({\bf w};s,l,t)$. Next, we discuss how the probability distribution $P({\bf w};s,l,t)$ can be estimated for future time points and we formally present a distance metric based on KL-divergence for defining relevance.
-%
-%Given a source $s \in S$, a location $l \in L$ and a time point $t$ each parameters $p_{w,s,l,t}, \forall w \in V$ of the distribution $P({\bf w};s,l,t)$, can be estimated as $p_{w,s,l,t} = \frac{x_{w,s,l,t}}{\sum_{w \in V} x_{w,s,l,t}}$, i.e., the fraction of the number of articles $x_{w,s,l,t}$ by $s$ at time $t$ that correspond to location $l$ and mention the word $w$ over the total number of articles in $s$ at time $t$ for location $l$. Intuitively, when given a topic $z$ and a future time point $t$, the appearance count of a word in source $s$ for location $l$ at time $t$ is equal to the average occurrence rate of the word, regardless of the source, multiplied by the probability of that word being generated by topic $z$ multiplied by the probability that this topic is relevant to location $l$ and the probability of that topic being prominent at time $t$, multiplied by the probability of location $l$ appearing in $s$. Thus to compute the overall estimated appearance count of a word $w$ we need to sum over all topics. We have:
-%
-%\begin{equation}
-%x_{w,s,l,t} = \bar{x}_{w}\cdot \sum_{z = 1}^K \phi_{z,w}\cdot \theta_{l,z} \cdot \xi_{z,t} \cdot \Pr(l|s) 
-%\label{eq:est_word}
-%\end{equation}
-%where $\bar{x}_{w}$ denotes the average rate of occurrences of word $w$ in $\mathcal{¥}{X}$, and $\phi_{z,w}$, $\theta_{l,z}$, and $\Pr(l|s)$ can be retrieved by the distribution $\psi_s$ used in  \model. 
-%
-%However, $\xi_{z,t}$, i.e., the probability of topic $z$ being prominent at time $t$, corresponds to a future time point and needs to be estimated. We use the values of distribution $\xi_{z}, \forall z \in K$ corresponding to past time points to forecast the values $\xi_{z,t} \mbox{with } z \in \{1, 2, \dots, K\}$. We use an autoregressive model over the values of topic $z$ for the $n$ previous time intervals, denoted by $\xi_{z,t-1},\xi_{z,t-2},\dots,\xi_{z,t-N}$.We have:
-%\begin{equation}
-%\xi_{z,t}=a_1 \cdot \xi_{z,t-1}+a_2\cdot \xi_{z,t-2}+\dots +a_n\cdot \xi_{z,t-n}
-%\end{equation}
-%where $a_1,a_2,.....,a_n$ are the regression coefficients.
-%
-%To determine how relevant a topic is to the content of source $s$ for location $l$, we cast the problem as a document categorization topic and consider the normalized distance between distributions $\phi_z$ and $P({\bf w};s,l,t)$ to be equal to their symmetric KL distance~\cite{bigi:2003}.  More precisely, given a topic $z$ and the content of a source $s$ for location $l$ at time $t$, denoted by $s_{l,t}$ we have that the topic to source relevance is:
-%
-%\begin{equation}
-%{\sf Relevance}(z, s_{l,t}) = 1 - \frac{KLD(\phi_z,s_{l,t})}{KLD(\phi_z,\emptyset)}
-%\end{equation}
-%where $KLD(\phi_z,s_{l,t})$ denotes the KL distance between distributions $\phi_z$ and $P({\bf w};s,l,t)$, and $KLD(\phi_z,\emptyset)$ denotes the KL distance between the distribution for topic $\phi_z$ and the empty document. For the empty document we define its word distribution as $P(w; \emptyset) = \epsilon, \forall w \in V$ where $\epsilon$ corresponds to a small positive constant. The symmetric KL distance between $\phi_z$ and $P({\bf w};s,l,t)$ is defined as:
-%
-%\begin{equation}
-%KLD(\phi_z, s_{l,t}) = \sum_{w \in V} (P(w;z) - P(w;s,l,t))\cdot \log\frac{P(w;z)}{P(w;s,l,t)} \nonumber
-%\end{equation}
-%Due to space limitations we refer the reader to Bigi~\cite{bigi:2003} for details. 
-
-Finally, to detect if the source-topic relevance for a future time point constitutes an anomalous points we use one-class SVMs~\cite{schoelkopf:99} (OCSVM). A OCSVM maps input data $X$ into a high dimensional feature space $H$ via a kernel $\Phi: X \rightarrow H$ and finds the maximal margin hyperplane which best separates the training data from the origin. The classification rule corresponds to $f(x) = {\sf sign}(\mathbf{w}\Phi(x) - b)$, where $\mathbf{w}$ is a weight vector and $b$ is a bias term. We use this classification rule to detect if a new point $x$ is an anomalous point (i.e., $f(x) < 0$) or not. 
-
-We train a separate OCSVM for each source, location and disease topic triplet and forecast outbreaks on a weekly basis. The features used in each OCSVM correspond to the predicted relevance of the source's content to each topic for the past time points. To improve the robustness of each OCSVM, we exclude the time points that correspond to actual disease outbreaks from our training data. For this, we make use of a gold standard report (GSR) which gives ground truth determinations of whether a disease incidence (Hantavirus) happened in a given location at a time point included in $T$. The GSR is determined by analysts poring over multiple news sources and studying bulletins issued by health reporting organizations such as ProMED~\cite{probmed}.  This approach thus predicts  {\em if} a disease outbreak will happen based on the data provided by a source and {\em where} it will happen (since we are training and forecasting for each location). For the {\em when} since we are predicting for an epi week we adopt a standard relative date within the epi week to be the date at which the rare disease incidence will occur, and tune it using cross-validation. 
-
-
+We train a separate OCSVM for each source-location pair and forecast outbreaks for a disease under consideration on a weekly basis. We use as features the topic relevance for each source-location pair to at the most prominent topics characterizing the disease under consideration. The data points used to train each OCSVM correspond to the predicted relevance of the source's content to the selected topics for the past time points. To improve the robustness of each OCSVM, we exclude the time points that correspond to actual disease outbreaks from our training data. For this, we make use of a gold standard report (GSR) which gives ground truth determinations of whether a disease incidence (Hantavirus) happened in a given location at a time point included in $T$. The GSR is determined by analysts poring over multiple news sources and studying bulletins issued by health reporting organizations such as ProMED~\cite{probmed}.  This approach thus predicts  {\em if} a disease outbreak will happen based on the data provided by a source and {\em where} it will happen (since we are training and forecasting for each location). For the {\em when} since we are predicting for an epi week we adopt a standard relative date within the epi week to be the date at which the rare disease incidence will occur, and tune it using cross-validation. 
 
 \subsection{Fusing Multiple Predictions}
 \label{sec:integration}
+Until now, we discussed how the events provided by each source can be used to derive an outbreak prediction when considering each individual source as an expert. However, our final goal is to detect the incidence of a particular disease for a specific location. Thus, we fuse the predictions of all sources into a single prediction for each location $l \in L$ at time $t$ using a weighted majority voting algorithm based on the multiplicative weights framework\cite{arora:2012}.
 
-Until now, we discussed how the events provided by each source can be used to derive an outbreak prediction when considering each individual source as an expert. However, our final goal is to detect the incidence of a particular disease for a specific location. Thus, we fuse the predictions of all sources into a single prediction for each location $l \in L$ at time $t$ using a randomized weighted majority voting algorithm\cite{arora:2012}.
-
-Given time $t$ in the future, we focus on a location $l$ and view each source $s \in S$ as an expert providing a prediction $d_s \in [-1,1]$ with the value $-1$ corresponding to the emergence of an outbreak. We also assign a weight $w_s$ to each source. Given the predictions of all sources, we predict yes/no for an outbreak at location $l$ by taking the majority vote $\sum_{s \in S} w_s \cdot d_s$.  We learn the weight $w_s$ for each source using the randomized multiplicative weights update algorithm shown in Algorithm \ref{algo:mw}.
+Given time $t$ in the future, we focus on a location $l$ and view each source $s \in S$ as an expert providing a prediction $d_s \in [-1,1]$ with the value $-1$ corresponding to the emergence of an outbreak and $1$ otherwise. We also assign a weight $w_s$ to each source. Given the predictions of all sources, we predict yes/no for an outbreak at location $l$ by taking the majority vote $\sum_{s \in S} w_s \cdot d_s$.  We learn the weight $w_s$ for each source using the multiplicative weights update algorithm shown in Algorithm \ref{algo:mw}.
 
 \begin{algorithm}[h]
-\caption{Multiplicative Weights Update for Source Accuracy}
+\caption{Multiplicative Weights Update for Sources}
 \begin{algorithmic}[1]
-\STATE {\bf Input:} $N_l$: set of sources for location $l$; ${\bf D_l}$: training points;
-\STATE {\bf Output:} $\bf{W}$: weights for sources in $N_l$
-\STATE $T \leftarrow \lceil \frac{4\ln(|N_l|)}{\epsilon^2} \rceil$ {\em /* Initialize number of epochs */}
+\STATE {\bf Input:} $S_l$: set of sources for location $l$; ${\bf D_l}$: training points; $R_{S_l}$: source-topic relevance dictionary for sources in $S_l$ and points in ${\bf D_l}$; $O_{S_l}$: one-class SVMs for $S_l$; $\epsilon$: discount factor
+\STATE {\bf Output:} $\bf{W}$: weights for sources in $S_l$
+%\STATE $T \leftarrow \lceil \frac{4\ln(|N_l|)}{\epsilon^2} \rceil$ {\em /* Initialize number of epochs */}
 \STATE Initialize all weights $W$ to 1
-\FORALL {$t$ to $\{1, 2, \dots, T\}$}
-    \FORALL {$d \in {\bf D_l}$}
-    	\FORALL {$i \in N_s$}
-		\STATE {\em /* Construct the expert distribution $\mathcal{D}$*/}
-		\STATE $\mathcal{D} = \{p_1,p_2, \dots, p_{|N_l|}\}, ~p_i = \frac{W_i}{\sum_{j \in N_l} W_j}, \forall i \in N_l$
-		\STATE Draw an expert $k$ from $\mathcal{D}$
-		\STATE Use expert $k$ to get a prediction $d_k$ for point $d$
-		\IF {the expert makes a mistake}
-			\STATE $W_k \leftarrow W_k\cdot (1 - \epsilon)$ {\em /* Decrease the weight */}
-		\ENDIF
+\FORALL {$d \in {\bf D_l}$}    	
+	\FORALL {$s \in S_l$}
+	\STATE {\em /*Extract the expert's vote*/}
+	\STATE $v \leftarrow O_{S_l}[s].predict(R_{S_l}[s][d])$
+	\IF {v is wrong}
+		\STATE  $W_k \leftarrow W_k\cdot \exp(-\epsilon)$ {\em /* Decrease the weight */}
+	\ELSE
+		\STATE $W_k \leftarrow W_k\cdot \exp(\epsilon)$ {\em /* Increase the weight */}
+	\ENDIF
 	\ENDFOR	
-    \ENDFOR
+	\STATE Normalize the weights to sum up to $1.0$
 \ENDFOR
 \RETURN ${\bf W}$
 \end{algorithmic}
 \label{algo:mw}
 \end{algorithm}
 
-We consider a location $l$ and a disease topic $z$, and construct the necessary input for the multiplicative weights update algorithm. More precisely, we identify the set of sources that can be considered as experts for location $l$, i.e., sources for which $\Pr(l|s) \geq 0$, and then we construct the set of training points  ${\bf D}$ by considering the reported outbreaks in GSR that correspond to location $l$ and topic $z$. More precisely, we populate ${\bf D_l}$ with tuples of the form $(time point, outbreak)$ for all historical time points present in $\mathcal{X}$, while setting the value of $outbreak$ to $-1$ if an actual outbreak was reported and $1$ otherwise.
+We consider a location $l$, and construct the necessary input for the multiplicative weights update algorithm. More precisely, we first identify the set of sources $S_l$ that can be considered as experts for location $l$, i.e., sources that have published for location $l$, and then, we construct the set of training points  ${\bf D_l}$ by considering the reported outbreaks in GSR that correspond to location $l$ and the disease under consideration. More precisely, we populate ${\bf D_l}$ with tuples of the form $(time point, outbreak)$ for all historical time points present in $\mathcal{X}$, while setting the value of $outbreak$ to $-1$ if an actual outbreak was reported and $1$ otherwise. Finally, we form a dictionary containing all the past source-topic relevance values for the sources in $S_l$ and the training points in ${\bf D_l}$.
 
-Given the input described above, the algorithm proceeds in an iterative fashion updating the weights of the sources based on the accuracy of their predictions. In particular, the algorithm iterates over all training points in ${\bf D}$ for $T$ epochs (Ln. 6 - 7). The number of epochs depends on the number of experts and is initialized to $\lceil \frac{4\ln(|N_l|)}{\epsilon^2} \rceil$ (Ln. 3) in order to achieve the standard error guarantees of the multiplicative weights update algorithm~\cite{arora:2012}. At each iteration, the algorithm constructs a probability distribution over the experts by normalizing their corresponding weights (Ln. 9) and samples a single expert from that distribution (Ln. 10) to form the final prediction for the corresponding training point. If the expert is mistaken, it's corresponding weight is reduced in a multiplicative fashion (Ln. 13). Finally, the algorithm outputs the weights corresponding to the accuracy of each source, which are later used to fuse the individual source predictions for future time points. The process is repeated as more ground-truth data are becoming available through GSR.
+Given the input described above, the algorithm proceeds in an iterative fashion updating the weights of the sources based on the accuracy of their predictions. In particular, the algorithm iterates over all training points in ${\bf D_l}$ (Ln. 4).  At each iteration, the algorithm iterates over all available sources (Ln. 5) and extracts their prediction corresponding to a specific training point from the past (Ln. 6-7). If the expert is mistaken, it's corresponding weight is reduced in a multiplicative fashion (Ln. 9), otherwise its weight is increased (Ln. 11). Finally, the algorithm outputs the normalized weights corresponding to each source, which are later used to fuse the individual source predictions for future time points. The process is repeated as more ground-truth data are becoming available through GSR.
 
-
-
+Finally, each outbreak prediction for a location $l$ is associated with a {\em confidence score}. Let $S$ be the set of relevant sources for location $l$ and $S_{-1}$ be the subset of sources predicting an outbreak. Moreover, let $a_l(s)$ be the overall {\em accuracy} of a source $s \in S_l$ considering its past predictions for location $l$. The accuracy of source $s$ is defined over the available past time window as $a_l(s) = \frac{\#\mbox{ correct preditions}}{\#\mbox{total prediction}}$ and corresponds to the probability of $s$ giving a correct prediction. Combining the above, we define the confidence score as: 
+\begin{equation}
+ConfScore = \prod_{s \in S_{-1}}a_l(s) \cdot \prod_{s \in S_l \setminus S_{-1}} (1 - a_l(s))
+\end{equation}
+Given the confidence score of each outbreak prediction, one can use a threshold mechanism to select the final outbreak predictions, and balance the trade-off between precision and recall as we show in \Cref{sec:exp}. 
 
 \section{Experimental Evaluation}
 \label{sec:exp}
-We present an empirical evaluation of the proposed framework: The main questions we seek to address are: (1) how effective is the proposed topic model in identifying disease topics, and in discovering the corresponding spatio-temporal patterns, (2) how accurately can the proposed techniques forecast disease outbreaks, and (3) whether leveraging the varying authoritativeness levels of data sources for different locations can improve the accuracy of outbreak predictions. We empirically study these questions using real-world data focusing on rare-disease incidences in countries in Latin America.
+We present an empirical evaluation of the proposed framework: The main questions we seek to address are: (1) how effective is the proposed topic model in identifying disease topics, and in discovering the corresponding spatio-temporal patterns, (2) how accurately can the proposed techniques forecast disease outbreaks, and (3) whether leveraging the varying authoritativeness levels of data sources for different locations can improve the accuracy of outbreak predictions. We empirically study these questions using real-world data focusing on rare-disease outbreaks in countries in Latin America.
 
-%In this section we present an empirical evaluation of our proposed models 
-%- location-based model and source-based model in detecting hantavirus outbreaks.
-%The main questions we seek to address are:
-%
-%\begin{enumerate}
-%  \item How can we interpret and identify different disease topics discovered
-%    by the topic model
-%  \item How early and accurately can our proposed models forecast Hantavirus 
-%    outbreaks
-%  \item How can we evaluate the relative importance of sources and/or experts 
-%    in detecting hantavirus outbreaks, for a particular location and 
-%    at a specific time.
-%\end{enumerate}
 \subsection{Experimental Setup}
-\noindent{\bf Data:} We consider a dataset corresponding to a corpus of public health-related news articles and tweets extracted from HealthMap~\cite{healthmap}, a prominent online source of news articles and tweets for disease outbreak monitoring and real-time surveillance of emerging public health threats. In this paper, we focus on HealthMap articles from Latin America
+\noindent{\bf Data:} We consider a dataset corresponding to a corpus of public health-related news articles and tweets extracted from HealthMap~\cite{healthmap}, a prominent online aggregator of news articles and tweets for disease outbreak monitoring and real-time surveillance of emerging public health threats. Since, we focus on countries in Latin America the vocabulary we consider consists of Spanish and Portuguese words. Each article is associated with a data source and a location corresponding to a country-state pair. Traditional IR pre-processing such as stop-word removal and term frequency modeling is performed over a fixed vocabulary of words. The dictionary contains words that are either commonly associated with diseases (e.g.,``contagious") or words associated with a specific disease (e.g.,``rodents",``hanta" for Hantavirus). The latter are also used to identify the topics that are most 
+
+When predicting for an epi week $t$ we use historical (weekly) data from June 2012 up to the previous week $t-1$ to discover the topics using \model and estimate the source-topic relevance values for $t$ at each available location. As we progress to prediction for forthcoming weeks, we gather the estimated source-topic relevance values corresponding to past weeks and align them with the gold standard report (\Cref{sec:source_pred}) to  form the necessary training points for the OCSVMs. We evaluate the performance of our proposed techniques from January 2013 to March 2014. The size of the input data varies over time, as new articles are added every epi week. The number of words in the data ranges from 20908 to 48700, the number of locations from 74 to 144 and the number of HealthMap data sources from 381 to 798.
+
+\noindent{\bf Models:} We evaluate the following models:
+\squishlist
+\item \fullmodel: Our source-based framework introduced in \Cref{sec:model} and \Cref{sec:pred}. 
+\item \locationmodel: A variation of \fullmodel that uses \model to identify disease related topics and their spatio-temporal patterns, but integrates \model with a {\em location-only} anomaly detection approach. We follow a similar approach to the one introduced in \Cref{sec:source_pred}, where for each location we calculate the location-topic relevance values for future time points and use a separate OCSVM for each location to detect anomalous points. To calculate the location-topic relevance, we estimate each entry of the location's word frequency vector as $\hat{F}_{l,t}[w] = \bar{x}_{w} \sum_{z \in K}\phi_{z,w}\cdot \theta_{l,z} \cdot \xi_{z,t}$. Intuitively,  \locationmodel integrates news articles from multiple data sources ignoring the accuracy of individual sources.
+\item BRM: A {\em base rate model} that assumes a fixed rate for the occurrence of rare disease outbreaks for each location and for each
+month. To determine this rate, the model extracts the average frequency of outbreak occurrences reported over a past time window of four months. BRM reports disease outbreaks for that location at a frequency equal to the extracted rate. Alerting dates are assigned to the beginning of each month while event dates are assigned uniformly at random to a day within the corresponding month. We take the average performance over 25 independent runs.
+\squishend
+All models are implemented in Python and the evaluation is performed on an Intel(R) Xeon(R) CPU E7- 4870 @2.40GHz/64bit/1TB machine. 
 
 
-. HealthMap~\cite{healthmap}  The dataset we have used for training our models is the HealthMap [?] (www.healthmap.org) 
-corpus. HealthMap is a prominent online source of news articles and tweets for 
-disease outbreak monitoring and real-time surveillance of emerging public health
-threats. In operation since September 2006, HealthMap system captures outbreak 
-as well as disease-related warning data from over 50,000 electronic media sources.
-Thus HealthMap dataset has the potential to be used as an early detection system for disease outbreaks,
-even from areas which is relatively inaccessible to traditional global public health efforts.
-HealthMap system also supports multiple languages, currently it monitors disease outbreak information
-sources in Spanish, English, Arabic, Portuguese, Russian, Chinese and French. Using this service 
-we receive various disease-related news documents as a daily feed.
+\noindent{\bf Parameter Setup:} The parameters for each OCSVM in the aforementioned models are tuned using a leave-one-out cross-validation approach. For the topic model \model, we set the parameters of the Dirichlet priors to $\alpha = 2/K$, $\beta = 0.01$ and $\gamma = 0.01$ where K is the number of topics. We evaluated the Topic Model with 8, 12 and 15 topics, and found that $K=12$ results in more meaningful topics.  
 
-{\bf Input Setup and Preprocessing:}
+\noindent{\bf Metrics:} We adopt five key measures of performance. Given our predictions, we compute the precision, recall and F1-score at a country level, grouping together prediction for locations in the same country. We also compute an average warning quality for each country. Each prediction for a location in the country under consideration is assigned a quality score $Q = \frac{4}{3}(1 + a_{loc} + a_{date})$, where $a_{loc}$ and $a_{date}$ denote the location and date accuracy of the prediction. To calculate $a_{loc}$ we use a two-level topology, considering the country, and state corresponding to the location of a warning. A partial score of $0.67$ is assigned to a warning if it matches the country of an outbreak correctly and an additional score of $0.33$ is assigned if the warning matches the state correctly. The date specific accuracy $a_{date}$ is calculated as $a_{date} = 1 - \frac{min(|\mbox{predicted date} - \mbox{actual date}|,7)}{7}$. Finally, we consider the lead time of our predictions, which is calculated as the time between the date of alerting and the actual date of reporting the outbreak (not the incidence date of the outbreak). 
 
-Our corpus of public health-related news articles is drawn from HealthMap dataset
-introduced in the above section. In our experiments we are focusing on the HealthMap articles of 
-Latin America.  For Latin America, HealthMap articles provide monitoring and real-time surveillance 
-information about multiple diseases like Swine Flu H1N1, Dengue, Avian Influenza, Hantavirus, Chagas and many more.
-
-Content of each HealthMap article is enriched and extracted tokens and/or words are fed thorugh a number of preprocessing steps 
-like stopword removal to remove as much unwanted words as possible. HealthMap also 
-tags each article with a (lat, long) information, URL information and a date. From the (lat, long) information, 
-we infer the state and country of the article and the URL information
-helps in determing the source and/or publisher of the article. Thus for each article we can extract the following information:
-word count, location, source and timestamp. 
-
-{\bf *Talk to theo and take some suggestions about writing this
-paragraph*}
+\noindent{\bf Mapping Warnings to Events:} Since there could be multiple events (and/or alerts) in a given month, a strategy is necessary to map events to alerts. We conduct a maximum bipartite matching between events and alerts where (i) an edge exists if the alert was issued prior to the reporting date of the event, (ii) the weight on the edge denotes the putative quality score. 
 
 
+%\subsection{GSR}
+%
+%The Ground Truth Data for disease incidences we used for evaluating our models is the Gold Standard Report (GSR). 
+%GSR is organized by an independent third party (MITRE), not the authors of this 
+%paper. Using Human Analysts, MITRE surveys multiple Latin American and/or International 
+%News Sources and study bulletins issued by health-reporting organizations such 
+%as PROMED [?] or CDC [?] to determine confirmed Hantavirus outbreaks. For each 
+%Hantavirus outbreak, MITRE provides the following information: 
+%\begin{enumerate}
+%  \item location information of the outbreak (Country, State and City)
+%  \item Event date (date at which the disease incidence has occured or outbreak has started)
+%  \item the earliest reported date in the news
+%  \item the news source reporting the disease incidence
+%  \item a small description of the disease incidence
+%\end{enumerate}
+%
+%The analyst starts by reading headlines of an article and if a significant disease incidence is discovered
+%or inferred the analysts will skim through the remainder of the article to determine if a notable event is 
+%described therein. If such an event is discovered, the analyst will extract and 
+%encode relevant information given above about that event into a GSR template. In determining disease
+%incidences, the analysts also adopt a 6-month rule. More specifically, if a news report is 
+%for the same disease, in the same city within six months of the last report, then it 
+%is not a new event and will not appear in the GSR; otherwise it is a new event and will be captured in the GSR.
+%Figure 2 shows the distribution of confirmed Hantavirus incidences in four countries of Latin America (Chile, Argentina, Brazil and Uruguay)
+%from January 2013 to March 2014.
+%
+%\begin{figure}[h!]
+%      \centering
+%          \includegraphics[width=0.5\textwidth]{fig/hanta_dist.pdf}
+%    \caption{Hantavirus Outbreak Distribution in four countries of Latin
+%  America (Chile, Argentina, Brazil, Uruguay) from January 2013 to March
+%  2014}
+%    \end{figure}
+%
+%\subsection{Evaluation Metrics}
+%
+%We adopt three key measures of performance (Quality Score, F1 score and Lead Time). Evaluation for a model is done 
+%on a monthly basis. More Specifically, the warnings and/or alerts generated from a model in a particular month
+%are evaluated against the GSR events in that month. Given our alerts, we compute the Recall and Precision at a country level, 
+%grouping together alerts for locations in the same country. Using the Recall 
+%and Precision values, we calculate the F1 score as $F_{1} = (2 * Precision * Recall) / (Precision + Recall)$.  
+%
+%We also compute an average warning quality for each country. Each prediction for a location in 
+%the country under consideration is assigned a Quality Score $Q = (4/3) * (1 + a_{loc} + a_{date})$, where $a_{loc}$
+%and $a_{date}$ denote the location and date accuracy of the prediction. For calculating $a_{loc}$ we use a three-level
+%topology. At the top level is the country, the second level is the province, state, region, or department, or the 
+%next largest administrative division, and the third level is the city. The models will generate their 
+%warning using this typology, i.e. the warning will be in the form of a triple, (country, province or state, city). 
+%For rare disease, we do not have enough resolution at the city level, so the models predict upto the state level and
+%keeps the city name "-" in the warning. The evaluation script compares the warning location with 
+%the GSR location, to get $(x_{1}, x_{2}, x_{3})$, where $x_{1}$ is the country comparison, $x_{2}$ is the province 
+%or state comparison (if the GSR has that level of specificity), and $x_{3}$ is the city comparison 
+%(if the GSR has that level of specificity). $x_{i} = 0$ if they do not match, $x_{i} = 1$ if they do. If 
+%either one of the GSR entry or the warning entry is blank and the other is not, xi = 0. If 
+%both are blank, xi = 1. The match between the warning location and the GSR 
+%location is:  
+%
+%    $a_{loc} = 1/3 x_{1} + 1/3 x_{1} x_{2} + 1/3 x_{1} x_{2} x_{3}$
+%
+%Note that if $x_{1} = 0$ (i.e. the warning misses the country level location), then $a_{loc} = 0$. If 
+%all the entries match, then $a_{loc} = 1$. Note also that a warning is penalized if it is underspecified or overspecified.
+%The $a_{date}$ is calculated as $a_{date} = 1-min(|predicted date -
+%actual event date|, 7)/7$.
+%The Quality Score takes values between 0 and 4. 
+%
+%Finally, we consider the lead time of our predictions, which is calculated as the
+%time between the alerting date in the warning and the actual date of reporting of the outbreak (not the incidence
+%date of the outbreak).
+%
+%\paragraph{\bf Mapping Warnings to Events} Since there could be multiple
+%events (and/or alerts) in a given month, a strategy is necessary to map events to alerts. We
+%conduct a maximum bipartite matching between events and alerts where i) an edge
+%exists if the alert was issued prior to the reporting date of the event, ii) the
+%weight on the edge denotes the putative quality score. 
+%
+%
+%\subsection{Model Paramater Settings}
+%
+%For the Topic Model we set Dirichlet parameter 
+%$\alpha = 2/K$ (prior on topic given location) where K is the number of topics, 
+%Dirichlet parameter $\beta = 0.01$ (prior on word given topic) and Dirichlet 
+%parameter $\gamma = 0.01$ (prior on time given topic). These Dirichlet Hyperparameter 
+%settings are typical for those used for analyzing hidden topics in datasets 
+%and will be almost similar to values that one can learn by sampling or optimization. 
+%For selecting the number of topics (K), we evaluated the Topic Model with 8, 12 and 15 topics. 
+%We find that setting $K=12$ results in more meaningful clustering of the hidden topics.  
+%
+%
+%For one-class SVM we use a parameter search algorithm to find the exact kernel and its associated 
+%set of parameters for each location and source in case of source-based model 
+%and for each location in case of location-based model. We first construct the 
+%training set based on non-disease points to be fed to the one-class SVM.
+%For each kernel ("polynomial" and "rbf") we start with a valid range of associated paramters
+%and for each combination of the parameters for each kernel, we calculate two types of error:
+%\begin{enumerate}
+%
+%  \item \textbf{Normal Error} : This error is the sum of the error in predicting 
+%    the  normal and/or non-disease points calculated via the LOOCV method.
+%  \item \textbf{Anomalous Error} : This error is the sum of the error in predicting the anomalous and/or disease points
+%\end{enumerate}
+%
+%For certain locations we may have no anomalous and/or disease points, i.e. there 
+%has been no hantavirus incidences in that location in the near past. For these 
+%locations we only consider the normal error. For locations where we have both normal 
+%and anomalous historical points, we evaluate the weighted sum of both the errors. We select 
+%the parameter combination which gives us the minimum overall error.
+%
+%For the multiplicative weights algorithm the past window size over which we 
+%calculate the accuracy of each relevant source and/or expert for a location is set
+%to be 5 months. 
+
+\subsection{Disease Topics Discovery}
+The HealthMap corpus contains mentions to multiple diseases, both common and rare, over multiple countries in Latin America. The most prevalent diseases in the dataset are the common flu, dengue fever, the swine flu (i.e., the h1n1 flu), and the hantavirus disease. While the first are widespread with a large number of incidences throughout a calendar year, hantavirus is a rather rare disease with a small number of incidences. Since we are interested in rare-diseases, we focus on the  Hantavirus of outbreaks. \Cref{fig:hanta_timeline} illustrates the number of Hantavirus outbreaks from January 2013 to March 2014 across for Chile, Argentina, Brazil and Uruguay. No Hantavirus outbreaks were reported to other countries in Latin America. We observe that the number of incidences is rather small with the majority of outbreaks occurring in Chile. Finally, we point out that no seasonal patterns governing the outbreak incidences were observed for each of the aforementioned countries.
+
+\begin{figure}[t]
+\begin{center}
+	\includegraphics[trim=0 0 0 0, clip,scale=0.6]{fig/hanta_outbreaks_timeline.eps}
+\end{center}
+\caption{Timeline of Hantavirus outbreaks from January 2013 to March 2014 for Chile, Argentina, Brazil and Uruguay. No Hantavirus outbreaks were reported for other countries in Latin America.}
+ \label{fig:hanta_timeline}
+\end{figure}
+
+Given the characteristics described above, we now present the topics discovered by \model for the HealthMap corpus together with their normalized histograms over time.
 
 
-{\bf Models:} We evaluate the following models:
+\begin{table*}[t]
+\begin{center}
+\caption{Three topics discovered by \model that are related to Hantavirus. The first two topics are related to the two different hantavirus syndromes (i.e., HPS and HFRS) and the third topic is related to generic information about the  transmission of the virus. Histograms show the topic prominence over time; The top words with their probability in each topic are shown.}
+\large{
+\begin{tabular}{|lr|lr|lr|}
+\hline
+\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_hanta_timeline.eps}} & \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_hanta3_timeline.eps}}& 
+\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_hanta2_timeline.eps}} \\ \hline
+virus & 0.0468 & vacuna & 0.0057 & paciente & 0.0220 \\
+epidemia & 0.0443 & campos & 0.0031 & transmissor & 0.0133 \\
+enfermos & 0.0066& provincial & 0.0028  & lixo &0.0099 \\
+hanta & 0.0068 & hantavirus & 0.0024  & criaderos & 0.0088\\
+viral & 0.0038 & tosse & 0.0022 & respiratorias & 0.0061 \\
+territorio & 0.0027 & nariz & 0.0019 & manos & 0.0056 \\
+pneumonia & 0.0014 & estonudar & 0.0011 & boca & 0.0047 \\
+sangre & 0.0014 & abdominal & 0.0008 & rural & 0.0038 \\
+ratones & 0.0006 & lluvia & 0.0008 & musculares & 0.0028 \\
+cardiopulmonar & 0.0002 & renal & 0.0005 & roedores & 0.0022 \\
+\hline
+\end{tabular}}
+\end{center}
+\label{tab:hanta_topics}
+\end{table*}
 
-\begin{itemize}
-
-\item Source-based Model (S-STAT): This model corresponds to the source-based 
-  disease outbreak detection approach. This model has the following sub-models:
-  1) Tensor-based Topic Model which gives different topic distributions 
-  as output, 2) then the Prediction Model which calculates the topic cosine similarity 
-  values corresponding to each source and location for the future timepoint and 3) finally the multiplicative 
-  weights algorithm makes the final prediction for a particular location by calculating 
-  the weighted sum of the OCSVM prediction of the relevant sources for that location.
-  The weights are assigned to each expert and/or source based on its accuracy of prediction 
-  over the historical timepoints.
-\item Location-based Model (L-STAT): There is no concept of source and/or expert 
-  in this model. It has the following sub-models: 1) The Topic Model, and 2) then 
-  the Prediction Model which computes the topic cosine similarity values for each location for the future timepoint
-  and 3) the OCSVM Model which predicts whether the predicted cosine similarity value is an anomalous point or a normal
-  point with respect to the historical similarity values. If it is an anomalous point, the model generates a warning.
-\item Base Rate Model (BRM): We also compare the performance of our framework against a base rate model (BRM). This
-    model assumes a fixed rate for the occurence of hantavirus outbreaks for each country and each 
-    month. To determine this rate, the model extracts the average frequency of outbreak occurrences
-    reported over a past time window of $3$ months. BRM reports disease outbreaks for that country at 
-    a frequency equal to the extracted rate. Alerting dates are assigned to the beginning of each month
-    while events dates are assigned uniformly at random to a day within the corresponding month. (Thus
-    lead time is not a meaningful criterion to evaluate the BRM.) The performance of BRM is enhanced
-    by taking the average performance over 25 independent runs.
-\end{itemize}
-
-All models are implemented in Python and the evaluation is performed on an Intel(R) Xeon(R) CPU E7- 4870 @2.40GHz/64bit/1TB machine.
-
-
-\subsection{GSR}
-
-The Ground Truth Data for disease incidences we used for evaluating our models is the Gold Standard Report (GSR). 
-GSR is organized by an independent third party (MITRE), not the authors of this 
-paper. Using Human Analysts, MITRE surveys multiple Latin American and/or International 
-News Sources and study bulletins issued by health-reporting organizations such 
-as PROMED [?] or CDC [?] to determine confirmed Hantavirus outbreaks. For each 
-Hantavirus outbreak, MITRE provides the following information: 
-\begin{enumerate}
-  \item location information of the outbreak (Country, State and City)
-  \item Event date (date at which the disease incidence has occured or outbreak has started)
-  \item the earliest reported date in the news
-  \item the news source reporting the disease incidence
-  \item a small description of the disease incidence
-\end{enumerate}
-
-The analyst starts by reading headlines of an article and if a significant disease incidence is discovered
-or inferred the analysts will skim through the remainder of the article to determine if a notable event is 
-described therein. If such an event is discovered, the analyst will extract and 
-encode relevant information given above about that event into a GSR template. In determining disease
-incidences, the analysts also adopt a 6-month rule. More specifically, if a news report is 
-for the same disease, in the same city within six months of the last report, then it 
-is not a new event and will not appear in the GSR; otherwise it is a new event and will be captured in the GSR.
-Figure 2 shows the distribution of confirmed Hantavirus incidences in four countries of Latin America (Chile, Argentina, Brazil and Uruguay)
-from January 2013 to March 2014.
-
-\begin{figure}[h!]
-      \centering
-          \includegraphics[width=0.5\textwidth]{fig/hanta_dist.pdf}
-    \caption{Hantavirus Outbreak Distribution in four countries of Latin
-  America (Chile, Argentina, Brazil, Uruguay) from January 2013 to March
-  2014}
-    \end{figure}
-
-\subsection{Evaluation Metrics}
-
-We adopt three key measures of performance (Quality Score, F1 score and Lead Time). Evaluation for a model is done 
-on a monthly basis. More Specifically, the warnings and/or alerts generated from a model in a particular month
-are evaluated against the GSR events in that month. Given our alerts, we compute the Recall and Precision at a country level, 
-grouping together alerts for locations in the same country. Using the Recall 
-and Precision values, we calculate the F1 score as $F_{1} = (2 * Precision * Recall) / (Precision + Recall)$.  
-
-We also compute an average warning quality for each country. Each prediction for a location in 
-the country under consideration is assigned a Quality Score $Q = (4/3) * (1 + a_{loc} + a_{date})$, where $a_{loc}$
-and $a_{date}$ denote the location and date accuracy of the prediction. For calculating $a_{loc}$ we use a three-level
-topology. At the top level is the country, the second level is the province, state, region, or department, or the 
-next largest administrative division, and the third level is the city. The models will generate their 
-warning using this typology, i.e. the warning will be in the form of a triple, (country, province or state, city). 
-For rare disease, we do not have enough resolution at the city level, so the models predict upto the state level and
-keeps the city name "-" in the warning. The evaluation script compares the warning location with 
-the GSR location, to get $(x_{1}, x_{2}, x_{3})$, where $x_{1}$ is the country comparison, $x_{2}$ is the province 
-or state comparison (if the GSR has that level of specificity), and $x_{3}$ is the city comparison 
-(if the GSR has that level of specificity). $x_{i} = 0$ if they do not match, $x_{i} = 1$ if they do. If 
-either one of the GSR entry or the warning entry is blank and the other is not, xi = 0. If 
-both are blank, xi = 1. The match between the warning location and the GSR 
-location is:  
-
-    $a_{loc} = 1/3 x_{1} + 1/3 x_{1} x_{2} + 1/3 x_{1} x_{2} x_{3}$
-
-Note that if $x_{1} = 0$ (i.e. the warning misses the country level location), then $a_{loc} = 0$. If 
-all the entries match, then $a_{loc} = 1$. Note also that a warning is penalized if it is underspecified or overspecified.
-The $a_{date}$ is calculated as $a_{date} = 1-min(|predicted date -
-actual event date|, 7)/7$.
-The Quality Score takes values between 0 and 4. 
-
-Finally, we consider the lead time of our predictions, which is calculated as the
-time between the alerting date in the warning and the actual date of reporting of the outbreak (not the incidence
-date of the outbreak).
-
-\paragraph{\bf Mapping Warnings to Events} Since there could be multiple
-events (and/or alerts) in a given month, a strategy is necessary to map events to alerts. We
-conduct a maximum bipartite matching between events and alerts where i) an edge
-exists if the alert was issued prior to the reporting date of the event, ii) the
-weight on the edge denotes the putative quality score. 
+\begin{table*}[t]
+\begin{center}
+\caption{Three topics discovered by \model that are related to Influenza (Avian Flu), dengue and Swine Flu. Histograms show the topic prominence over time; The top words with their probability in each topic are shown.}
+\large{
+\begin{tabular}{|lr|lr|lr|}
+\hline
+\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_influenza_timeline.eps}} & \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_dengue_timeline.eps}}& 
+\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_swine_timeline.eps}} \\ \hline
+influenza & 0.0567 & dengue & 0.2095 & gripe & 0.0522 \\
+mosquito & 0.0495 & aegypti & 0.0166 & h1n1 & 0.0351 \\
+pacientes & 0.0258 & agua & 0.0137  & infectadas &0.0043 \\
+aviar & 0.0144 & mosquitos & 0.0058  & flu & 0.0024\\
+larvas & 0.0096 & agricultura & 0.0019 & bacteria & 0.0021 \\
+fiebre & 0.0088 & respiratoria & 0.0018 & enfermo & 0.0008 \\
+surto & 0.0061 & rurales & 0.0006 & vacinas & 0.0008 \\
+zancudos & 0.0008 & agropecuario	 & 0.0006 & nasal & 0.0008 \\
+avian & 0.0006 & hemorragias & 0.0005 & paracetamol & 0.0007 \\
+h5n1 & 0.0003 & suero & 0.0004 & swine & 0.0005 \\
+\hline
+\end{tabular}}
+\end{center}
+\label{tab:common_topics}
+\end{table*}
 
 
-\subsection{Model Paramater Settings}
-
-For the Topic Model we set Dirichlet parameter 
-$\alpha = 2/K$ (prior on topic given location) where K is the number of topics, 
-Dirichlet parameter $\beta = 0.01$ (prior on word given topic) and Dirichlet 
-parameter $\gamma = 0.01$ (prior on time given topic). These Dirichlet Hyperparameter 
-settings are typical for those used for analyzing hidden topics in datasets 
-and will be almost similar to values that one can learn by sampling or optimization. 
-For selecting the number of topics (K), we evaluated the Topic Model with 8, 12 and 15 topics. 
-We find that setting $K=12$ results in more meaningful clustering of the hidden topics.  
+\begin{figure}[t]
+\begin{center}
+	\includegraphics[trim=5 0 10 5, clip,scale=0.6]{fig/country_topic.eps}
+\end{center}
+\caption{The topic prominence corresponding to the disease topics for Brazil, Chile, Uruguay and Argentina. The numbers reported are averaged over all states corresponding to each country.}
+ \label{fig:country_topic}
+\end{figure}
 
 
-For one-class SVM we use a parameter search algorithm to find the exact kernel and its associated 
-set of parameters for each location and source in case of source-based model 
-and for each location in case of location-based model. We first construct the 
-training set based on non-disease points to be fed to the one-class SVM.
-For each kernel ("polynomial" and "rbf") we start with a valid range of associated paramters
-and for each combination of the parameters for each kernel, we calculate two types of error:
-\begin{enumerate}
-
-  \item \textbf{Normal Error} : This error is the sum of the error in predicting 
-    the  normal and/or non-disease points calculated via the LOOCV method.
-  \item \textbf{Anomalous Error} : This error is the sum of the error in predicting the anomalous and/or disease points
-\end{enumerate}
-
-For certain locations we may have no anomalous and/or disease points, i.e. there 
-has been no hantavirus incidences in that location in the near past. For these 
-locations we only consider the normal error. For locations where we have both normal 
-and anomalous historical points, we evaluate the weighted sum of both the errors. We select 
-the parameter combination which gives us the minimum overall error.
-
-For the multiplicative weights algorithm the past window size over which we 
-calculate the accuracy of each relevant source and/or expert for a location is set
-to be 5 months. 
-
-\subsection{Disease Topic Discovery}
 
 The output of the Topic Model provides us the following information: location 
 distribution over topics, topic distribution over words and Topic Distribution 
@@ -611,35 +565,35 @@ focus of the topic. More Specifically, under each topic we rank the keywords
 based on its probability values and we can infer the topic interpretation by 
 looking at the top-ranked keywords under that topic. 
 
-\begin{figure*}[ht]
-\begin{center}
-        \subfigure{\includegraphics[scale=0.27]{figures/topic_12_cloud.pdf}\label{fig:topic_12_cloud}}
-        \subfigure{\includegraphics[scale=0.27]{figures/topic_9_cloud.pdf} \label{fig:topic_9_cloud}}
-        \subfigure{\includegraphics[scale=0.27]{figures/topic_10_cloud.pdf}\label{fig:topic_10_cloud}}
-\end{center}
-\caption{Word Clouds of Common Disease Topics (a) Topic 12 (Swine Flu) (b) Topic 9 (Avian Flu) (c) Topic 10 (Dengue)}
-\label{fig:Common_clouds}
-\end{figure*}
-
-\begin{figure*}[ht]
-\begin{center}
-        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_cloud.pdf}\label{fig:topic_2_cloud}}
-        \subfigure{\includegraphics[scale=0.27]{figures/topic_7_cloud.pdf}\label{fig:topic_7_cloud}}
-        \subfigure{\includegraphics[scale=0.27]{figures/topic_11_cloud.pdf}\label{fig:topic_11_cloud}}
-\end{center}
-\caption{Word Clouds of Hantavirus Topics (a) Topic 2 (b) Topic 7 (c) Topic 11}
-\label{fig:Rare_clouds}
-\end{figure*}
-
-\begin{figure*}[ht]
-\begin{center}
-        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_1.pdf}\label{fig:topic_2_1}}
-        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_2.pdf}\label{fig:topic_2_2}}
-        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_cloud.pdf}\label{fig:topic_2_cloud}}
-\end{center}
-\caption{Evolution of Hantavirus Topic (Topic 2) across the timeline (a)October 2012, (b) June 2013, (c) March 2014}
-\label{fig:evolution_clouds}
-\end{figure*}
+%\begin{figure*}[ht]
+%\begin{center}
+%        \subfigure{\includegraphics[scale=0.27]{figures/topic_12_cloud.pdf}\label{fig:topic_12_cloud}}
+%        \subfigure{\includegraphics[scale=0.27]{figures/topic_9_cloud.pdf} \label{fig:topic_9_cloud}}
+%        \subfigure{\includegraphics[scale=0.27]{figures/topic_10_cloud.pdf}\label{fig:topic_10_cloud}}
+%\end{center}
+%\caption{Word Clouds of Common Disease Topics (a) Topic 12 (Swine Flu) (b) Topic 9 (Avian Flu) (c) Topic 10 (Dengue)}
+%\label{fig:Common_clouds}
+%\end{figure*}
+%
+%\begin{figure*}[ht]
+%\begin{center}
+%        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_cloud.pdf}\label{fig:topic_2_cloud}}
+%        \subfigure{\includegraphics[scale=0.27]{figures/topic_7_cloud.pdf}\label{fig:topic_7_cloud}}
+%        \subfigure{\includegraphics[scale=0.27]{figures/topic_11_cloud.pdf}\label{fig:topic_11_cloud}}
+%\end{center}
+%\caption{Word Clouds of Hantavirus Topics (a) Topic 2 (b) Topic 7 (c) Topic 11}
+%\label{fig:Rare_clouds}
+%\end{figure*}
+%
+%\begin{figure*}[ht]
+%\begin{center}
+%        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_1.pdf}\label{fig:topic_2_1}}
+%        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_2.pdf}\label{fig:topic_2_2}}
+%        \subfigure{\includegraphics[scale=0.27]{figures/topic_2_cloud.pdf}\label{fig:topic_2_cloud}}
+%\end{center}
+%\caption{Evolution of Hantavirus Topic (Topic 2) across the timeline (a)October 2012, (b) June 2013, (c) March 2014}
+%\label{fig:evolution_clouds}
+%\end{figure*}
 
 
 Figures 3 and 4 show the keyword clouds for the disease topics discovered from the Healthmap corpus.
@@ -755,24 +709,24 @@ To be added.
 
 to be added.
 
-\begin{figure*}[ht]
-\begin{center}
-        \subfigure{\includegraphics[scale=0.13]{figures/F1-score-overall.pdf}\label{fig:F1-score}}
-        \subfigure{\includegraphics[scale=0.13]{figures/QS_overall.pdf}\label{fig:QS}}
-        \subfigure{\includegraphics[scale=0.13]{figures/Lead_time_overall.pdf}\label{fig:LT}}
-\end{center}
-\caption{Comparison plots of S-STAT and L-STAT in terms of (a)
-F1-score,(b) Quality Score and (c) Lead Time}
-\label{fig:evaluation_metric}
-\end{figure*}
-
+%\begin{figure*}[ht]
+%\begin{center}
+%        \subfigure{\includegraphics[scale=0.13]{figures/F1-score-overall.pdf}\label{fig:F1-score}}
+%        \subfigure{\includegraphics[scale=0.13]{figures/QS_overall.pdf}\label{fig:QS}}
+%        \subfigure{\includegraphics[scale=0.13]{figures/Lead_time_overall.pdf}\label{fig:LT}}
+%\end{center}
+%\caption{Comparison plots of S-STAT and L-STAT in terms of (a)
+%F1-score,(b) Quality Score and (c) Lead Time}
+%\label{fig:evaluation_metric}
+%\end{figure*}
+%
 \section{Related Work}
 \label{sec:related_work}
 Much of the work in the topic models literature has focused on identifying either spatial or temporal trends for the discovered topics. To the best of our knowledge most models focus on the temporal or spatial trends in isolation and do not analyze both types of trends jointly. 
 
 A number of methods have been proposed for analyzing the time evolution of topics in document collections, such as the topics over time (TOT) model~\cite{wang:2006}, the dynamic topic model (DTM)~\cite{blei:2006}, and TriMine model~\cite{matsubara:2012}.  More precisely, TOT handles time-windows of fixed size and uses a Beta distribution to model the evolution of a topic over time. DTM  also focuses on a time-window of fixed size but uses Kalman filters to align topics with different time points. Finally, TriMine is able to analyze windows of variate size and unlike TOT and DTM is able to find cyclic time patterns with different timescales, which enables predicting future events. While TOT and DTM focus on the dimension of time alone, TriMine can associate the generation of different modalities with topics, however is agnostic to correlations across the different modalities.
 
-A different line of work~cite{wang:2007} focuses on discovering spatial patterns jointly with the word co-occurrences. In particular, the authors introduced the Spatial Latent Dirichlet Allocation (SLDA), which better encodes spatial structure among words. While the model focuses on computer vision applications where documents are comprised by visual words the proposed techniques can be trivially extended to regular text documents. A similar approach was introduced by Ramage et al.~\cite{ramage:2009} for labeled documents where the labels can correspond to multiple modalities, i.e., locations as well.
+A different line of work~\cite{wang:2007} focuses on discovering spatial patterns jointly with the word co-occurrences. In particular, the authors introduced the Spatial Latent Dirichlet Allocation (SLDA), which better encodes spatial structure among words. While the model focuses on computer vision applications where documents are comprised by visual words the proposed techniques can be trivially extended to regular text documents. A similar approach was introduced by Ramage et al.~\cite{ramage:2009} for labeled documents where the labels can correspond to multiple modalities, i.e., locations as well.
 
 Finally, although previous approaches~\cite{paul:11, sadilek:2012, rider:2013} have considered the use of topic models for detecting disease outbreaks, they mainly focus on common diseases, like influenza, for which large amounts of publicly available data or specialized medical records are available. 
 
@@ -788,20 +742,20 @@ Finally, although previous approaches~\cite{paul:11, sadilek:2012, rider:2013} h
 In this section we first provide a Gibbs sampling algorithm for learning the parameters of the \model model. Before we proceed with the actual algorithm we present the joint distribution corresponding to the \model model. We have the following:
 {\scriptsize
 \begin{align}
-&\Pr(\w,\tim,\loc,\z,{\bf \phi},{\bf \theta},{\bf \xi};\alpha,\beta,\gamma,\Psi) =  \nonumber \\
+&\Pr(\w,\tim,\loc,\z,{\bf \phi},{\bf \theta},{\bf \xi};\alpha,\beta,\gamma) =  \nonumber \\
 &=\prod_{z = 1}^{K}\Pr(\phi_z;\beta)\Pr(\xi_z;\gamma) \prod_{l = 1}^{L}\Pr(\theta_l;\alpha) \nonumber \\
-& \cdot \prod_{s = 1}^{S}\prod_{i = 1}^{N_s} \Pr(z_{si}|l_{si},\theta_l)\Pr(l_{si}|\psi_s)\Pr(w_{si}|\phi_{z_{si}})\Pr(t_{si}|\xi_{z_{si}}) \nonumber
+& \cdot \prod_{s = 1}^{S}\prod_{i = 1}^{N_s} \Pr(z_{si}|l_{si},\theta_l)\Pr(w_{si}|\phi_{z_{si}})\Pr(t_{si}|\xi_{z_{si}}) \nonumber
 \end{align}}
 Next, we marginalize over all ${\bf \phi}$, ${\bf \xi}$ and ${\bf \theta}$. We have:
 {\scriptsize
 \begin{align}
-&\Pr(\w,\tim,\loc,\z;\alpha,\beta,\gamma,\Psi) =  \int_{\phi}\int_{\theta}\int_{\xi} \Pr(\w,\tim,\loc,\z,{\bf \phi},{\bf \theta},{\bf \xi};\alpha,\beta,\gamma,\Psi) d\xi d\theta d\phi \nonumber \\
+&\Pr(\w,\tim,\loc,\z;\alpha,\beta,\gamma) =  \int_{\phi}\int_{\theta}\int_{\xi} \Pr(\w,\tim,\loc,\z,{\bf \phi},{\bf \theta},{\bf \xi};\alpha,\beta,\gamma) d\xi d\theta d\phi \nonumber \\
 &=\int_{\phi} \prod_{z = 1}^{K}\Pr(\phi_z;\beta) \prod_{s = 1}^{S}\prod_{i = 1}^{N_s}\Pr(w_{si}|\phi_{z_{si}}) d\phi \nonumber \\
 & \cdot \int_{\xi} \prod_{z = 1}^{K} \Pr(\xi_z;\gamma)\prod_{s = 1}^{S}\prod_{i = 1}^{N_s}\Pr(t_{si}|\xi_{z_{si}}) d\xi \nonumber \\
-&\cdot \int_{\theta} \prod_{l = 1}^{L}\Pr(\theta_l;\alpha)\prod_{s = 1}^{S}\prod_{i = 1}^{N_s}\Pr(z_{si}|l_{si},\theta_{l_{si}})\Pr(l_{si}|\psi_s) d\theta \nonumber \\
+&\cdot \int_{\theta} \prod_{l = 1}^{L}\Pr(\theta_l;\alpha)\prod_{s = 1}^{S}\prod_{i = 1}^{N_s}\Pr(z_{si}|l_{si},\theta_{l_{si}})d\theta \nonumber \\
 &=\int_{\phi} \prod_{z = 1}^{K}\Pr(\phi_z;\beta) \prod_{s = 1}^{S}\prod_{i = 1}^{N_s}\Pr(w_{si}|\phi_{z_{si}}) d\phi \nonumber \\
 &  \cdot \int_{\xi} \prod_{z = 1}^{K} \Pr(\xi_z;\gamma)\prod_{s = 1}^{S}\prod_{i = 1}^{N_s}\Pr(t_{si}|\xi_{z_{si}}) d\xi \nonumber \\
-&\cdot \int_{\theta} \prod_{l = 1}^{L}\Pr(\theta_l;\alpha)\prod_{s = 1}^{S}\prod_{i = 1}^{N_s}\Pr(z_{si}|l_{si},\theta_{l_{si}}) d\theta \prod_{s = 1}^{S}\prod_{i = 1}^{N_s} \Pr(l_{si}|\psi_s)\nonumber
+&\cdot \int_{\theta} \prod_{l = 1}^{L}\Pr(\theta_l;\alpha)\prod_{s = 1}^{S}\prod_{i = 1}^{N_s}\Pr(z_{si}|l_{si},\theta_{l_{si}}) d\theta \nonumber
 \end{align}
 }
 We focus on the different integrals in the expression presented above. We start with the integral over ${\bf \phi}$. 
@@ -833,24 +787,18 @@ where $o^z_l$ denotes the number of times location $l$ was associated with topic
 Eventually we have that the joint distribution is given by:
 {\scriptsize
 \begin{align}
-&\Pr(\w,\tim,\loc,\z;\alpha,\beta,\gamma,\Psi) = \prod_{z = 1}^K \frac{\Gamma(\sum_{r = 1}^V \beta_r)}{\prod_{r = 1}^V \Gamma(\beta_r)} \frac{\prod_{r = 1}^V \Gamma(n^{z}_{r} + \beta_r)}{\Gamma(\sum_{r =1}^V n^{z}_{r} + \beta_r)} \nonumber \\
+&\Pr(\w,\tim,\loc,\z;\alpha,\beta,\gamma) = \prod_{z = 1}^K \frac{\Gamma(\sum_{r = 1}^V \beta_r)}{\prod_{r = 1}^V \Gamma(\beta_r)} \frac{\prod_{r = 1}^V \Gamma(n^{z}_{r} + \beta_r)}{\Gamma(\sum_{r =1}^V n^{z}_{r} + \beta_r)} \nonumber \\
 &\cdot \prod_{z = 1}^K \frac{\Gamma(\sum_{t = 1}^T \gamma_t)}{\prod_{t = 1}^T \Gamma(\gamma_t)} \frac{\prod_{t = 1}^T \Gamma(m^{z}_{t} + \gamma_t)}{\Gamma(\sum_{t =1}^T m^{z}_{t} + \gamma_t)} \nonumber \\
-& \cdot \prod_{l =1}^L\frac{\Gamma(\sum_{z = 1}^K \alpha_z)}{\prod_{z = 1}^K \Gamma(\alpha_z)}\frac{\prod_{z=1}^K\Gamma(o^z_l + \alpha_z)}{\Gamma(\sum_{z = 1}^K o^z_l + \alpha_z)} \cdot \prod_{s = 1}^{S}\prod_{i = 1}^{N_s} \Pr(l_{si}|\psi_s) \nonumber
+& \cdot \prod_{l =1}^L\frac{\Gamma(\sum_{z = 1}^K \alpha_z)}{\prod_{z = 1}^K \Gamma(\alpha_z)}\frac{\prod_{z=1}^K\Gamma(o^z_l + \alpha_z)}{\Gamma(\sum_{z = 1}^K o^z_l + \alpha_z)}  \nonumber
 \end{align}}
 The goal of Gibbs sampling is to approximate the conditional distribution $\Pr(\z | \w, \tim,\loc;\alpha,\beta,\gamma,\Psi)$. Using the chain rule we have the following for the conditional probability:
 {\scriptsize
 \begin{align}
-&\Pr(z_{si}| \w,\tim,\loc,\z_{-si};\alpha,\beta,\gamma,\Psi) \nonumber \\
-&= \frac{\Pr(z_{si}, w_{si}, t_{si}, l_{si}|\w_{-si},\tim_{-si},\loc_{-si},\z_{-si};\alpha,\beta,\gamma,\Psi)}{\Pr(w_{si}, t_{si}, l_{si}|\w_{-si},\tim_{-si},\loc_{-si},\z_{-si};\alpha,\beta,\gamma,\Psi)} \nonumber \\
+&\Pr(z_{si}| \w,\tim,\loc,\z_{-si};\alpha,\beta,\gamma) \nonumber \\
+&= \frac{\Pr(z_{si}, w_{si}, t_{si}, l_{si}|\w_{-si},\tim_{-si},\loc_{-si},\z_{-si};\alpha,\beta,\gamma)}{\Pr(w_{si}, t_{si}, l_{si}|\w_{-si},\tim_{-si},\loc_{-si},\z_{-si};\alpha,\beta,\gamma)} \nonumber \\
 & \propto \frac{n^{k,-(s,i)}_{w_{si}} + \beta_{w_{si}}}{\sum_{r = 1}^V n^{k,-(s,i)}_{r} + \beta_{r}} \cdot \frac{m^{k,-(s,i)}_{t_{si}} + \gamma_{t_{si}}}{\sum_{t = 1}^T m^{k,-(s,i)}_{t} + \gamma_{t}} \nonumber \\
-& \cdot \frac{o^{k,-(s,i)}_{l_{si}} + \alpha_{l_{si}}}{\sum_{l = 1}^L o^{k,-(s,i)}_{l} + \alpha_{l}} \cdot \Pr(l_{si}|\psi_s) \nonumber
+& \cdot \frac{o^{k,-(s,i)}_{l_{si}} + \alpha_{l_{si}}}{\sum_{l = 1}^L o^{k,-(s,i)}_{l} + \alpha_{l}} \nonumber
 \end{align}}
-where $-si$ in the superscript indicates that the current example has been excluded by the count summations. Notice that the probability $\Pr(l_{si}|\psi_s)$ is constant through all possible topic assignments and hence can be omitted. Eventually, we have that:
-{\scriptsize
-\begin{align}
-&\Pr(z_{si}| \w,\tim,\loc,\z_{-si};\alpha,\beta,\gamma,\Psi) \nonumber \\
-& \propto \frac{n^{k,-(s,i)}_{w_{si}} + \beta_{w_{si}}}{\sum_{r = 1}^V n^{k,-(s,i)}_{r} + \beta_{r}} \cdot \frac{m^{k,-(s,i)}_{t_{si}} + \gamma_{t_{si}}}{\sum_{t = 1}^T m^{k,-(s,i)}_{t} + \gamma_{t}} \nonumber \\
-& \cdot \frac{o^{k,-(s,i)}_{l_{si}} + \alpha_{l_{si}}}{\sum_{l = 1}^L o^{k,-(s,i)}_{l} + \alpha_{l}}\nonumber
-\end{align}}
+where $-si$ in the superscript indicates that the current example has been excluded by the count summations. 
 
 \end{document}
