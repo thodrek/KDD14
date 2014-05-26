@@ -354,21 +354,6 @@ We present an empirical evaluation of the proposed framework: The main questions
 
 When predicting for an epi week $t$ we use historical (weekly) data from June 2012 up to the previous week $t-1$ to discover the topics using \model and estimate the source-topic relevance values for $t$ at each available location. As we progress to prediction for forthcoming weeks, we gather the estimated source-topic relevance values corresponding to past weeks and align them with the gold standard report (\Cref{sec:source_pred}) to  form the necessary training points for the OCSVMs. We evaluate the performance of our proposed techniques from January 2013 to March 2014. The size of the input data varies over time, as new articles are added every epi week. The number of words in the data ranges from 20908 to 48700, the number of locations from 74 to 144 and the number of HealthMap data sources from 381 to 798.
 
-\noindent{\bf Models:} We evaluate the following models:
-\squishlist
-\item \fullmodel: Our source-based framework introduced in \Cref{sec:model} and \Cref{sec:pred} coupled with a thresholding mechanism where every week and for each country we accept only the predictions whose confidence score (see \Cref{eq:conf}) belongs in the top-$k$ percentile of the prediction scores for that country.
-\item \locationmodel: A variation of \fullmodel that uses \model to identify disease related topics and their spatio-temporal patterns, but integrates \model with a {\em location-only} anomaly detection approach. We follow a similar approach to the one introduced in \Cref{sec:source_pred}, where for each location we calculate the location-topic relevance values for future time points and use a separate OCSVM for each location to detect anomalous points. To calculate the location-topic relevance, we estimate each entry of the location's word frequency vector as $\hat{F}_{l,t}[w] = \bar{x}_{w} \sum_{z \in K}\phi_{z,w}\cdot \theta_{l,z} \cdot \xi_{z,t}$. Intuitively,  \locationmodel integrates news articles from multiple data sources ignoring the accuracy of individual sources. We use a thresholding mechanism similar to that of \fullmodel considering the accuracy of each state-based OCSVM. 
-\item BRM: A {\em base rate model} that assumes a fixed rate for the occurrence of rare disease outbreaks for each location and for each
-month. To determine this rate, the model extracts the average frequency of outbreak occurrences reported over a past time window of four months. BRM reports disease outbreaks for that location at a frequency equal to the extracted rate. Alerting dates are assigned to the beginning of each month while event dates are assigned uniformly at random to a day within the corresponding month. We take the average performance over 25 independent runs.
-\squishend
-All models are implemented in Python and the evaluation is performed on an Intel(R) Xeon(R) CPU E7- 4870 @2.40GHz/64bit/1TB machine. 
-
-
-\noindent{\bf Parameter Setup:} The parameters for each OCSVM in the aforementioned models are tuned using a leave-one-out cross-validation approach. For the topic model \model, we set the parameters of the Dirichlet priors to $\alpha = 2/K$, $\beta = 0.01$ and $\gamma = 0.01$ where K is the number of topics. We evaluated the Topic Model with 8, 12 and 15 topics, and found that $K=12$ results in more meaningful topics.  
-
-\noindent{\bf Metrics:} We adopt five key measures of performance. Given our predictions, we compute the precision, recall and F1-score at a country level, grouping together prediction for locations in the same country. We also compute an average warning quality for each country. Each prediction for a location in the country under consideration is assigned a quality score $Q = \frac{4}{3}(1 + a_{loc} + a_{date})$, where $a_{loc}$ and $a_{date}$ denote the location and date accuracy of the prediction. To calculate $a_{loc}$ we use a two-level topology, considering the country, and state corresponding to the location of a warning. A partial score of $0.5$ is assigned to a warning if it matches the country of an outbreak correctly and an additional score of $0.5$ is assigned if the warning matches the state correctly. The date specific accuracy $a_{date}$ is calculated as $a_{date} = 1 - \frac{min(|\mbox{predicted date} - \mbox{actual date}|,7)}{7}$. Finally, we consider the lead time of our predictions, which is calculated as the time between the date of alerting and the actual date of reporting the outbreak (not the incidence date of the outbreak). 
-
-\noindent{\bf Mapping Warnings to Events:} Since there could be multiple events (and/or alerts) in a given month, a strategy is necessary to map events to alerts. We conduct a maximum bipartite matching between events and alerts where (i) an edge exists if the alert was issued prior to the reporting date of the event, (ii) the weight on the edge denotes the putative quality score. 
 \begin{table*}[t]
 \begin{center}
 \caption{Three topics discovered by \model that are related to Hantavirus. The first two topics are related to the two different hantavirus syndromes (i.e., HPS and HFRS) and the third topic is related to generic information about the  transmission of the virus. Histograms show the topic prominence over time; The top words with their probability in each topic are shown.}
@@ -393,6 +378,23 @@ cardiopulmonar & 0.0002 & renal & 0.0005 & roedores & 0.0022 \\
 \vspace{-10pt}
 \end{table*}
 
+
+\noindent{\bf Models:} We evaluate the following models:
+\squishlist
+\item \fullmodel: Our source-based framework introduced in \Cref{sec:model} and \Cref{sec:pred} coupled with a thresholding mechanism where every week and for each country we accept only the predictions whose confidence score (see \Cref{eq:conf}) belongs in the top-$k$ percentile of the prediction scores for that country.
+\item \locationmodel: A variation of \fullmodel that uses \model to identify disease related topics and their spatio-temporal patterns, but integrates \model with a {\em location-only} anomaly detection approach. We follow a similar approach to the one introduced in \Cref{sec:source_pred}, where for each location we calculate the location-topic relevance values for future time points and use a separate OCSVM for each location to detect anomalous points. To calculate the location-topic relevance, we estimate each entry of the location's word frequency vector as $\hat{F}_{l,t}[w] = \bar{x}_{w} \sum_{z \in K}\phi_{z,w}\cdot \theta_{l,z} \cdot \xi_{z,t}$. Intuitively,  \locationmodel integrates news articles from multiple data sources ignoring the accuracy of individual sources. We use a thresholding mechanism similar to that of \fullmodel considering the accuracy of each state-based OCSVM. 
+\item BRM: A {\em base rate model} that assumes a fixed rate for the occurrence of rare disease outbreaks for each location and for each
+month. To determine this rate, the model extracts the average frequency of outbreak occurrences reported over a past time window of four months. BRM reports disease outbreaks for that location at a frequency equal to the extracted rate. Alerting dates are assigned to the beginning of each month while event dates are assigned uniformly at random to a day within the corresponding month. We take the average performance over 25 independent runs.
+\squishend
+All models are implemented in Python and the evaluation is performed on an Intel(R) Xeon(R) CPU E7- 4870 @2.40GHz/64bit/1TB machine. 
+
+
+\noindent{\bf Parameter Setup:} The parameters for each OCSVM in the aforementioned models are tuned using a leave-one-out cross-validation approach. For the topic model \model, we set the parameters of the Dirichlet priors to $\alpha = 2/K$, $\beta = 0.01$ and $\gamma = 0.01$ where K is the number of topics. We evaluated the Topic Model with 8, 12 and 15 topics, and found that $K=12$ results in more meaningful topics.  
+
+
+\noindent{\bf Metrics:} We adopt five key measures of performance. Given our predictions, we compute the precision, recall and F1-score at a country level, grouping together prediction for locations in the same country. We also compute an average warning quality for each country. Each prediction for a location in the country under consideration is assigned a quality score $Q = \frac{4}{3}(1 + a_{loc} + a_{date})$, where $a_{loc}$ and $a_{date}$ denote the location and date accuracy of the prediction. To calculate $a_{loc}$ we use a two-level topology, considering the country, and state corresponding to the location of a warning. A partial score of $0.5$ is assigned to a warning if it matches the country of an outbreak correctly and an additional score of $0.5$ is assigned if the warning matches the state correctly. The date specific accuracy $a_{date}$ is calculated as $a_{date} = 1 - \frac{min(|\mbox{predicted date} - \mbox{actual date}|,7)}{7}$. Finally, we consider the lead time of our predictions, which is calculated as the time between the date of alerting and the actual date of reporting the outbreak (not the incidence date of the outbreak). 
+
+\noindent{\bf Mapping Warnings to Events:} Since there could be multiple events (and/or alerts) in a given month, a strategy is necessary to map events to alerts. We conduct a maximum bipartite matching between events and alerts where (i) an edge exists if the alert was issued prior to the reporting date of the event, (ii) the weight on the edge denotes the putative quality score. 
 
 \subsection{Disease Topics Discovery}
 The HealthMap corpus contains mentions to multiple diseases, both common and rare, over multiple countries in Latin America. The most prevalent diseases mentioned in the dataset are avian flu (i.e., type h5n1), dengue fever, swine flu (i.e., h1n1 flu), the hantavirus pulmonary syndrome (HPS) and the hantavirus hemorrhagic fever with renal syndrome (HFRS)~\cite{jonsson:10}. 
@@ -449,52 +451,47 @@ Finally, we examine the correlations between the discovered topics and the count
 \end{figure}
 
 \subsection{Predicting Disease Outbreaks}
-We evaluate the performance of the various disease outbreak detection algorithms focusing on Hantavirus incidences at four countries - Argentina, Chile, Uruguay and Brazil - for which cases of hantavirus outbreaks were reported. We apply BSR,  \fullmodel and \locationmodel. We evaluate the performance of \fullmodel and \locationmodel with $k \in \{5,10,20,50\}$. We use the three hantavirus topics described above to construct the necessary feature vectors for \fullmodel and \locationmodel.  \Cref{tab:results} shows the precision, recall and F1 score  of the three approaches from January 2013 to March 2014 averaged over the four countries. For \locationmodel and \fullmodel we report the results corresponding to the configuration $k$ that obtained the best performance. 
+We evaluate the performance of the various disease outbreak detection algorithms focusing on Hantavirus incidences at four countries - Argentina, Chile, Uruguay and Brazil - for which cases of hantavirus outbreaks were reported. We apply BSR,  \fullmodel and \locationmodel. We evaluate the performance of \fullmodel and \locationmodel with $k \in \{5,10,20,30,40,50,70\}$. We use the three hantavirus topics described above to construct the necessary feature vectors for \fullmodel and \locationmodel.  \Cref{tab:results} shows the precision, recall and F1 score  of the three approaches from January 2013 to March 2014 averaged over the four countries. For \locationmodel and \fullmodel we report the results corresponding to the configuration $k$ that obtained the best performance. 
 
 \begin{table}[h]
-  %\centering
+\scriptsize
   \caption{Performance evaluation for BSR, \locationmodel and \fullmodel on predicting Hantavirus outbreaks from January 2013 to March 2014. Notation $(k)$ denotes the best performing configuration for \locationmodel and \fullmodel}
   \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
     \hline
     & \multicolumn{3}{c|}{{\bf BSR}} &
-    \multicolumn{3}{c|}{{\bf \locationmodel}} &
-    \multicolumn{3}{c|}{{\bf \fullmodel}} \\
+    \multicolumn{3}{c|}{{\bf \locationmodel(5\%)}} &
+    \multicolumn{3}{c|}{{\bf \fullmodel(5\%)}} \\
     \cline{2-10} {\em Month}   & {\em Prec.} & {\em Rec.} & {\em F1} & {\em Prec.} & {\em Rec.} & {\em F1} & {\em Prec.} & {\em Rec.} & {\em F1} \\
     \hline 
-    {\bf Jan-2013} & 2.84 & 5.00 & 0.67 & 2.88 & 5.80 & 0.30 & 2.88 & 5.80 & 0.30\\ 
+    01/13 & 0.5 & 0.17 & 0.25 & 0.13 & 0.67 & 0.22 & 0.44 & 0.67 & 0.53\\ 
     \hline
-     {\bf Feb-2013} & 3.24 & 7.0 & 0.36 & 2.92 &
-                      10.0 & 0.15 \\ 
+     02/13 & 0.52 & 0.78 & 0.62 & 0.12 & 1.0 & 0.21 & 0.5 & 1.0 & 0.67\\ 
     \hline
-    {\bf March-2013} & 2.81 & 11.5 & 0.36 & 3.00 &
-          7.25 & 0.57 \\ 
+    03/13 & 0.7 & 0.35 & 0.46 & 0.29 & 0.5 & 0.37 & 0.5 & 0.5 & 0.5\\ 
     \hline
-    {\bf April-2013} & 2.99 & 5.0 & 0.53 & 2.85 &
-                      5.67 & 0.35 \\ 
+    04/13 & 0.78 & 0.59 & 0.67 & 0.6 & 0.75 & 0.67 & 0.57 & 1.0 & 0.73\\ 
     \hline
-    {\bf May-2013} & 3.01 & 4.25 & 0.43 & 2.99 &
-                      4.33 & 0.18 \\ 
+    05/13 & 0.51 & 0.48 & 0.54 & 0.14 & 0.2 & 0.16 & 0.38 & 0.6 & 0.47\\ 
     \hline
-    {\bf June-2013} & 2.72 & 6.0 & 0.23 & 0.00 &
-                      0.00 & 0.00 \\ 
+    06/13 & 0.22 & 0.68 & 0.33 & 0.14 & 1.0 & 0.25 & 0.14 & 1.0 & 0.25\\ 
     \hline
-    {\bf July-2013} & 2.92 & 5.0 & 0.19 & 0.00 &
-                      0.00 & 0.00 \\ 
+    07/13 & 0.22 & 0.68 & 0.33 & 0.14 & 1.0 & 0.25 & 0.2 & 1.0 & 0.33\\ 
     \hline
-    {\bf Aug-2013} & 2.72 & 2.0 & 0.21 & 2.81 &
-                      12.00 & 0.26 \\ 
+    08/13 & 0.4 & 0.6 & 0.47 & 0.2 & 1.0 & 0.33 & 0.67 & 1.0 & 0.80\\ 
     \hline
-    {\bf Sept-2013} & 2.47 & 5.0 & 0.49 & 2.44 &
-                      5.5 & 0.21 \\ 
+    09/13 & 0.5 & 0.33 & 0.39 & 0.23 & 1.0 & 0.37 & 0.67 & 0.67 & 0.67\\ 
     \hline
-    {\bf Oct-2013} & 2.97 & 9.6 & 0.59 & 3.17 &
-                      10.75 & 0.19 \\ 
+    10/13 & 0.62 & 0.24 & 0.35 & 0.31 & 0.8 & 0.45 & 0.38 & 0.6 & 0.47\\ 
     \hline
-    {\bf Nov-2013} & 2.65 & 6.8 & 0.62 & 2.87 &
-                      4.67 & 0.23 \\ 
+    11/13 & 0.89 & 0.44 & 0.59 & 0.21 & 0.83 & 0.34 & 0.45 & 0.83 & 0.58\\ 
     \hline
-    {\bf Dec-2013} & 2.87 & 8.0 & 0.64 & 2.87 &
-                      7.1 & 0.53 \\ 
+    12/13 & 0.9 & 0.32 & 0.47 & 0.75 & 0.55 & 0.63 & 0.67 & 0.55 & 0.60\\ 
+    \hline
+    01/14 & 0.65 & 0.49 & 0.56 &  &  &  &  &  & \\ 
+    \hline
+    02/14 & 0.56 & 0.74 & 0.64 &  &  &  & & & \\ 
+    \hline
+    03/14 & 0.55 & 0.88 & 0.68 &  &  &  & & & \\ 
     \hline
 
   \end{tabular}
@@ -528,59 +525,6 @@ warnings and events and the best possible matching is selected while
 calculating QS. Thats the reason L-STAT model is better than S-STAT in
 terms of QS for certain months.
 
-\begin{table}[h]
-  %\centering
-  \caption{Performance evaluation for BSR, \locationmodel and \fullmodel on predicting Hantavirus outbreaks in Chile, Argentina, Brazil and Uruguay from January 2013 to March 2014.}
-  \begin{tabular}{|c|c|c|c|c|c|c|}
-    \hline
-    {\bf Month} & \multicolumn{3}{c|}{{\bf S-STAT}} &
-    \multicolumn{3}{c|}{{\bf L-STAT}} \\
-    \cline{2-7} & QS & LT & F1-score & QS & LT & F1-score \\
-    \hline 
-    {\bf Jan-2013} & 2.84 & 5.00 & 0.67 & 2.88 &
-                      5.80 & 0.30 \\ 
-    \hline
-     {\bf Feb-2013} & 3.24 & 7.0 & 0.36 & 2.92 &
-                      10.0 & 0.15 \\ 
-    \hline
-    {\bf March-2013} & 2.81 & 11.5 & 0.36 & 3.00 &
-          7.25 & 0.57 \\ 
-    \hline
-    {\bf April-2013} & 2.99 & 5.0 & 0.53 & 2.85 &
-                      5.67 & 0.35 \\ 
-    \hline
-    {\bf May-2013} & 3.01 & 4.25 & 0.43 & 2.99 &
-                      4.33 & 0.18 \\ 
-    \hline
-    {\bf June-2013} & 2.72 & 6.0 & 0.23 & 0.00 &
-                      0.00 & 0.00 \\ 
-    \hline
-    {\bf July-2013} & 2.92 & 5.0 & 0.19 & 0.00 &
-                      0.00 & 0.00 \\ 
-    \hline
-    {\bf Aug-2013} & 2.72 & 2.0 & 0.21 & 2.81 &
-                      12.00 & 0.26 \\ 
-    \hline
-    {\bf Sept-2013} & 2.47 & 5.0 & 0.49 & 2.44 &
-                      5.5 & 0.21 \\ 
-    \hline
-    {\bf Oct-2013} & 2.97 & 9.6 & 0.59 & 3.17 &
-                      10.75 & 0.19 \\ 
-    \hline
-    {\bf Nov-2013} & 2.65 & 6.8 & 0.62 & 2.87 &
-                      4.67 & 0.23 \\ 
-    \hline
-    {\bf Dec-2013} & 2.87 & 8.0 & 0.64 & 2.87 &
-                      7.1 & 0.53 \\ 
-    \hline
-
-  \end{tabular}
-  \label{tab:results}
-\end{table}
-
-{\bf (*Table to be expanded, per country evaluation to be added, base rate
-model results to be added, LS values to be given as a separate
-evaluation metric*)}
 
 \subsection{Analysis of Sources and/or Experts}
 
