@@ -97,7 +97,7 @@
 
 \maketitle
 \begin{abstract}
-Rapidly increasing volumes of news feeds from diverse data sources, such as online newspapers, Twitter and online blogs are proving to be extremely valuable resources in helping anticipate, detect, and forecast outbreaks of rare diseases. This paper presents a spatio-temporal topic model over data sources that enables the effective monitoring of disease emergence and progression by capturing spatial and temporal topic trends. The new model is capable of discovering the location focus of each source allowing sources to be used as experts with varying degrees of authoritativeness when predicting location-specific disease outbreaks. For each source, we show how the extracted topic evolution and source's-spatial focus can be used for making near-term predictions of a disease outbreak being reported by the source. To fuse the individual source predictions into a final outbreak prediction we employ a multiplicative weights algorithm taking into account the accuracy of each source. We demonstrate the effectiveness of our proposed techniques using incidence data for Hantavirus in multiple countries of Latin America provided by HealthMap over a timespan of one year.
+Rapidly increasing volumes of news feeds from diverse data sources, such as online newspapers, Twitter and online blogs are proving to be extremely valuable resources in helping anticipate, detect, and forecast outbreaks of rare diseases. This paper presents a spatio-temporal topic model over data sources that enables the effective monitoring of disease emergence and progression by capturing spatial and temporal topic trends. The new model is capable of discovering the location focus of each source allowing sources to be used as experts with varying degrees of authoritativeness when predicting location-specific disease outbreaks. For each source, we show how the extracted topic evolution and source's-spatial focus can be used for making near-term predictions of a disease outbreak being reported by the source. To fuse the individual source predictions into a final outbreak prediction we employ a multiplicative weights algorithm taking into account the accuracy of each source. We demonstrate the effectiveness of our proposed techniques using incidence data for Hantavirus in multiple countries of Latin America provided by HealthMap over a timespan of fifteen months.
 \end{abstract}
 
 \section{Introduction}
@@ -291,6 +291,7 @@ data spans up to time point $t-1$. Thus, we estimate the probability of the sour
 mentioning a particular word $w$ at a future time $t$ by considering the weighted average occurrence rate of word $w$ in the source. We have:
 \begin{equation}
 \Pr(t|s,w) = \frac{\sum_{\tau = 1}^{t-1} \frac{1}{t - \tau}I(\tau,s,w)}{\sum_{\tau = 1}^{t-1} \frac{1}{t - \tau}}
+\label{eq:prob_time}
 \end{equation}
 where $I(s,\tau,w)$ is an indicator variable equal to one if source $s$ mentioned word $w$ at least once at time $\tau$, and zero otherwise. 
 To estimate the probability $\xi_{z,t} \mbox{ with } z \in \{1, 2, \dots, K\}$, 
@@ -347,7 +348,7 @@ Given the confidence score of each outbreak prediction, one can use a threshold 
 
 \section{Experimental Evaluation}
 \label{sec:exp}
-We present an empirical evaluation of the proposed framework: The main questions we seek to address are: (1) how effective is the proposed topic model in identifying disease topics, and in discovering the corresponding spatio-temporal patterns, (2) how accurately can the proposed techniques forecast disease outbreaks, and (3) whether leveraging the varying authoritativeness levels of data sources for different locations can improve the accuracy of outbreak predictions. We empirically study these questions using real-world data focusing on rare-disease outbreaks in countries in Latin America.
+We present an empirical evaluation of the proposed framework: The main questions we seek to address are: (1) how effective is the proposed topic model in identifying disease topics, and in discovering the corresponding spatio-temporal patterns, (2) how accurately can the proposed techniques forecast disease outbreaks, and (3) whether leveraging the varying authoritativeness levels of data sources for different locations can improve the accuracy of outbreak predictions. We empirically study these questions with real-world data focusing on rare-disease outbreaks in countries in Latin America.
 
 \subsection{Experimental Setup}
 \noindent{\bf Data:} We consider a dataset corresponding to a corpus of public health-related news articles and tweets extracted from HealthMap~\cite{healthmap}, a prominent online aggregator of news articles and tweets for disease outbreak monitoring and real-time surveillance of emerging public health threats. Since, we focus on countries in Latin America the vocabulary we consider consists of Spanish and Portuguese words. The dictionary does not comprise only of disease related words.  Each article is associated with a data source and a location corresponding to a country-state pair. Traditional IR pre-processing such as stop-word removal and term frequency modeling is performed over a fixed vocabulary of words. The dictionary contains words that are either commonly associated with diseases (e.g.,``contagious") or words associated with a specific disease (e.g.,``rodents",``hanta" for Hantavirus). The latter are also used to identify the topics that are most 
@@ -382,7 +383,7 @@ cardiopulmonar & 0.0002 & renal & 0.0005 & roedores & 0.0022 \\
 \noindent{\bf Models:} We evaluate the following models:
 \squishlist
 \item \fullmodel: Our source-based framework introduced in \Cref{sec:model} and \Cref{sec:pred} coupled with a thresholding mechanism where every week and for each country we accept only the predictions whose confidence score (see \Cref{eq:conf}) belongs in the top-$k$ percentile of the prediction scores for that country.
-\item \locationmodel: A variation of \fullmodel that uses \model to identify disease related topics and their spatio-temporal patterns, but integrates \model with a {\em location-only} anomaly detection approach. We follow a similar approach to the one introduced in \Cref{sec:source_pred}, where for each location we calculate the location-topic relevance values for future time points and use a separate OCSVM for each location to detect anomalous points. To calculate the location-topic relevance, we estimate each entry of the location's word frequency vector as $\hat{F}_{l,t}[w] = \bar{x}_{w} \sum_{z \in K}\phi_{z,w}\cdot \theta_{l,z} \cdot \xi_{z,t}$. Intuitively,  \locationmodel integrates news articles from multiple data sources ignoring the accuracy of individual sources. We use a thresholding mechanism similar to that of \fullmodel considering the accuracy of each state-based OCSVM. 
+\item \locationmodel: A variation of \fullmodel that uses \model to identify disease related topics and their spatio-temporal patterns, but integrates \model with a {\em location-only} anomaly detection approach. We follow a similar approach to the one introduced in \Cref{sec:source_pred}, where for each location we calculate the location-topic relevance values for future time points and use a separate OCSVM for each location to detect anomalous points. To calculate the location-topic relevance, we estimate each entry of the location's word frequency vector as $\hat{F}_{l,t}[w] = \bar{x}_{w} \Pr(t|l,w) \sum_{z \in K}\phi_{z,w}\cdot \theta_{l,z} \cdot \xi_{z,t}$, where $\Pr(t|s,w)$ is defined similarly to \Cref{eq:prob_time}. Intuitively,  \locationmodel integrates news articles from multiple data sources ignoring the accuracy of individual sources. We use a thresholding mechanism similar to that of \fullmodel considering the accuracy of each state-based OCSVM. 
 \item BRM: A {\em base rate model} that assumes a fixed rate for the occurrence of rare disease outbreaks for each location and for each
 month. To determine this rate, the model extracts the average frequency of outbreak occurrences reported over a past time window of four months. BRM reports disease outbreaks for that location at a frequency equal to the extracted rate. Alerting dates are assigned to the beginning of each month while event dates are assigned uniformly at random to a day within the corresponding month. We take the average performance over 25 independent runs.
 \squishend
@@ -451,11 +452,11 @@ Finally, we examine the correlations between the discovered topics and the count
 \end{figure}
 
 \subsection{Predicting Disease Outbreaks}
-We evaluate the performance of the various disease outbreak detection algorithms focusing on Hantavirus incidences at four countries - Argentina, Chile, Uruguay and Brazil - for which cases of hantavirus outbreaks were reported. We apply BSR,  \fullmodel and \locationmodel. We evaluate the performance of \fullmodel and \locationmodel with $k \in \{5,10,20,30,40,50,70\}$. We use the three hantavirus topics described above to construct the necessary feature vectors for \fullmodel and \locationmodel.  \Cref{tab:results} shows the precision, recall and F1 score  of the three approaches from January 2013 to March 2014 averaged over the four countries. For \locationmodel and \fullmodel we report the results corresponding to the configuration $k$ that obtained the best performance. 
+We evaluate the performance of the various disease outbreak detection algorithms focusing on Hantavirus incidences at the country level considering the predicted outbreaks for Argentina, Chile, Uruguay and Brazil.  We apply BSR,  \fullmodel and \locationmodel. We evaluate the performance of \fullmodel and \locationmodel with $k \in \{5,10,20,30,40,50,70\}$. We use the three hantavirus topics described above to construct the necessary feature vectors for \fullmodel and \locationmodel.  \Cref{tab:results} shows the precision, recall and F1 score  of the three approaches from January 2013 to March 2014 aggregated over all four countries mentioned above. For \locationmodel and \fullmodel we report the results corresponding to the configuration $k$ that obtained the best performance. 
 
 \begin{table}[h]
-\scriptsize
-  \caption{Performance evaluation for BSR, \locationmodel and \fullmodel on predicting Hantavirus outbreaks from January 2013 to March 2014. Notation $(k)$ denotes the best performing configuration for \locationmodel and \fullmodel}
+\scriptsize \centering
+  \caption{Performance evaluation for BSR, \locationmodel and \fullmodel on predicting Hantavirus outbreaks from January 2013 to March 2014. Notation $(k)$ denotes the best performing configuration for \locationmodel and \fullmodel. Bold fonts indicated the best performing model.}
   \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
     \hline
     & \multicolumn{3}{c|}{{\bf BSR}} &
@@ -463,72 +464,99 @@ We evaluate the performance of the various disease outbreak detection algorithms
     \multicolumn{3}{c|}{{\bf \fullmodel(5\%)}} \\
     \cline{2-10} {\em Month}   & {\em Prec.} & {\em Rec.} & {\em F1} & {\em Prec.} & {\em Rec.} & {\em F1} & {\em Prec.} & {\em Rec.} & {\em F1} \\
     \hline 
-    01/13 & 0.5 & 0.17 & 0.25 & 0.13 & 0.67 & 0.22 & 0.44 & 0.67 & 0.53\\ 
+    01/13 & {\bf 0.5} & 0.17 & 0.25 & 0.13 & {\bf 0.67} & 0.22 & 0.44 & {\bf 0.67} & {\bf 0.53}\\ 
     \hline
-     02/13 & 0.52 & 0.78 & 0.62 & 0.12 & 1.0 & 0.21 & 0.5 & 1.0 & 0.67\\ 
+     02/13 & {\bf 0.52} & 0.78 & 0.62 & 0.12 & {\bf 1.0} & 0.21 & 0.5 & {\bf 1.0} & {\bf 0.67}\\ 
     \hline
-    03/13 & 0.7 & 0.35 & 0.46 & 0.29 & 0.5 & 0.37 & 0.5 & 0.5 & 0.5\\ 
+    03/13 & {\bf 0.7} & 0.35 & 0.46 & 0.29 & {\bf 0.5} & 0.37 & 0.5 & {\bf 0.5} & {\bf 0.5}\\ 
     \hline
-    04/13 & 0.78 & 0.59 & 0.67 & 0.6 & 0.75 & 0.67 & 0.57 & 1.0 & 0.73\\ 
+    04/13 & {\bf 0.78} & 0.59 & 0.67 & 0.6 & 0.75 & 0.67 & 0.57 & {\bf 1.0} & {\bf 0.73}\\ 
     \hline
-    05/13 & 0.51 & 0.48 & 0.54 & 0.14 & 0.2 & 0.16 & 0.38 & 0.6 & 0.47\\ 
+    05/13 & {\bf 0.51} & 0.48 & {\bf 0.54} & 0.14 & 0.2 & 0.16 & 0.38 & {\bf 0.6} & 0.47\\ 
     \hline
-    06/13 & 0.22 & 0.68 & 0.33 & 0.14 & 1.0 & 0.25 & 0.14 & 1.0 & 0.25\\ 
+    06/13 & {\bf 0.22} & 0.68 & {\bf 0.33} & 0.14 & {\bf 1.0} & 0.25 & 0.14 & {\bf 1.0} & 0.25\\ 
     \hline
-    07/13 & 0.22 & 0.68 & 0.33 & 0.14 & 1.0 & 0.25 & 0.2 & 1.0 & 0.33\\ 
+    07/13 & {\bf 0.22} & 0.68 & {\bf 0.33} & 0.14 & {\bf 1.0} & 0.25 & 0.2 & {\bf 1.0} & {\bf 0.33}\\ 
     \hline
-    08/13 & 0.4 & 0.6 & 0.47 & 0.2 & 1.0 & 0.33 & 0.67 & 1.0 & 0.80\\ 
+    08/13 & 0.4 & 0.6 & 0.47 & 0.2 & {\bf 1.0} & 0.33 & {\bf 0.67} & {\bf 1.0} & {\bf 0.80}\\ 
     \hline
-    09/13 & 0.5 & 0.33 & 0.39 & 0.23 & 1.0 & 0.37 & 0.67 & 0.67 & 0.67\\ 
+    09/13 & 0.5 & 0.33 & 0.39 & 0.23 & {\bf 1.0} & 0.37 & {\bf 0.67} & {\bf 0.67} & {\bf 0.67}\\ 
     \hline
-    10/13 & 0.62 & 0.24 & 0.35 & 0.31 & 0.8 & 0.45 & 0.38 & 0.6 & 0.47\\ 
+    10/13 & {\bf 0.62} & 0.24 & 0.35 & 0.31 & {\bf 0.8} & 0.45 & 0.38 & 0.6 & {\bf 0.47}\\ 
     \hline
-    11/13 & 0.89 & 0.44 & 0.59 & 0.21 & 0.83 & 0.34 & 0.45 & 0.83 & 0.58\\ 
+    11/13 & {\bf 0.89} & 0.44 & {\bf 0.59} & 0.21 & {\bf 0.83} & 0.34 & 0.45 & {\bf 0.83} & 0.58\\ 
     \hline
-    12/13 & 0.9 & 0.32 & 0.47 & 0.75 & 0.55 & 0.63 & 0.67 & 0.55 & 0.60\\ 
+    12/13 & 0.9 & 0.32 & 0.47 & {\bf 0.75} & {\bf 0.55} & {\bf 0.63} & 0.67 & {\bf 0.55} & 0.60\\ 
     \hline
-    01/14 & 0.65 & 0.49 & 0.56 &  &  &  &  &  & \\ 
+    01/14 & 0.65 & 0.49 & 0.56 & 0.19 & 0.5 & 0.28 &  {\bf 0.71}& {\bf 0.63} & {\bf 0.67}\\ 
     \hline
-    02/14 & 0.56 & 0.74 & 0.64 &  &  &  & & & \\ 
+    02/14 & 0.56 & {\bf 0.74} & 0.64 & 0.27 &  0.67 & 0.38 & {\bf 0.67} & 0.67 & {\bf 0.67}\\ 
     \hline
-    03/14 & 0.55 & 0.88 & 0.68 &  &  &  & & & \\ 
+    03/14 & {\bf 0.55} & {\bf 0.88} & {\bf 0.68} & 0.29 & 0.8 & 0.42 & 0.5 & 0.8 & 0.62 \\ 
     \hline
 
   \end{tabular}
   \label{tab:results}
 \end{table}
 
-For Disease Outbreak Detection we focus on four countries - Argentina,
-Chile, Uruguay and Brazil for which Cases of hantavirus outbreaks were reported
-from January 2013 to December 2013. Table 2 gives an
-extensive evaluation of both our models (L-STAT and S-STAT) in terms of
-forecasting Hantavirus incidences. As shown, the S-STAT model can
-forecast hantavirus incidences with an average Lead Time of 6.4 days,
-whereas the average Lead Time for L-Stat Model is 6.09 days. Both the
-models are performing similar in terms of Lead Time. This can be
-attributed to the similar manner by which both the models generate
-warnings. In terms of Quality Score (QS), the S-STAT model is overall slighly
-better than the L-STAT Model. Quality Score of S-STAT model is better than L-STAT for 6
-months while L-STAT is superior in 5 months. This depicts that both the
-approaches are more or less similar in forecasting Location and Time
-accurately for certain hantavirus incidences. Finally, in terms of
-F1-score S-STAT model completely outperforms the L-STAT model. F1-score
-weights Recall and Precision equally, and thus a good model will
-maximize both precision and recall simultaneously. As a result S-STAT is
-a far better and reliable model than L-STAT in terms of Sensitivity and
-Specificity. The reason is that the L-STAT model overpredicts, i.e. it
-issues higher number of warnings than S-STAT for a particular country and  
-a particular month. Over-predicting sometimes gives
-advantage to the L-STAT model in terms of Quality Score(QS) because
-higher number of warnings ensures higher number of matchings between
-warnings and events and the best possible matching is selected while
-calculating QS. Thats the reason L-STAT model is better than S-STAT in
-terms of QS for certain months.
+As shown, \fullmodel  obtains the best F1-score and recall for most of the months. We observe that the recall obtained by \locationmodel is comparable to that of \fullmodel, while the recall of BSR is significantly lower compared to that of both \locationmodel and \fullmodel. The latter is expected as BSR can only predict outbreaks for states where a sufficient number of outbreaks has occurred in the past. In fact, due to its design BSR fails completely to detect outbreaks for states or countries where no outbreaks have been observed in the past (e.g., the outbreak in Brazil for Obtober 2013 and the outbreak in Uruguay for March 2013).  However this mechanism limits the number of false positives significantly, and thus, for many months we observe slightly higher or comparable precision scores for BSR with those of \fullmodel. On the other hand the precision scores of \locationmodel are significantly lower compared to \fullmodel. The reason for this behavior is the increased number of false positives returned by \locationmodel even after the thresholding mechanism was employed. 
+
+\begin{table}[h]
+ \centering
+\caption{Statistical significance of \fullmodel's performance gain.}
+\begin{tabular}{|c|c|c|c|} 
+\multicolumn{4}{c}{$H_0$: The median performance difference between the pairs is zero} \\
+\multicolumn{4}{c}{Reject $H_0$: $\|z\| \geq 1.645$ or $W \geq 15$ when $z$ not applicable} \\ 
+\multicolumn{4}{c}{Baseline confidence level of $\alpha =.005$} \\ \hline
+{\bf Metric} & {\bf Score} & {\bf BSR v.s. \fullmodel} & {\bf \locationmodel v.s. \fullmodel} \\ \hline
+\multirow{2}{*}{{\bf Prec.}} & W & -51 & 81\\
+& z & -1.463 & 2.966 \\ \hline
+\multirow{2}{*}{{\bf Rec.}} & W & 114 & 3\\
+& z & 3.223 & -\\ \hline
+\multirow{2}{*}{{\bf F1}} & W & 61 & 101\\
+& z & 1.899 & 3.154\\ \hline
+\end{tabular}
+\label{tab:significance}
+\end{table}
 
 
-\subsection{Analysis of Sources and/or Experts}
+To obtain a clearer understanding of \fullmodel's performance gain, we perform the Wilcoxon signed-rank~\cite{Wilcoxon45} test comparing the performance of  BSR with \fullmodel and \locationmodel with \fullmodel for precision, recall, and F1-score across all months. The Wilcoxon signed-rank test is a non-parametric statistical hypothesis test used to assess whether the performance differences between two algorithms are statistically significant. In table \Cref{tab:significance} we report the corresponding test statistic scores $W$ and the $z$-scores. We consider a baseline confidence level of $\alpha = .05$. As shown, the performance difference between BSR and \fullmodel is statistically significant for recall and F1 (with \fullmodel outperforming BSR) while the difference for precision is not statistically significant. For \locationmodel and \fullmodel, we see that the performance gain of \fullmodel for precision and F1 is statistically significant while the difference for recall is not. We did not observe significant differences in the performance of \locationmodel and \fullmodel for different threshold values for $k$. We do not report the results due to space limitations.
 
-to be added.
+We further analyze the performance of the three models by comparing the quality score cross all months under consideration. \Cref{fig:quality_timeline} shows the average prediction quality score obtained by each model from January 2013 to March 2014. A higher quality score is an indicator that a model can predict outbreaks correctly at the state and not only at the country level. As shown, both \locationmodel and \fullmodel outperform BSR significantly. This is expected since BSR relies only on past reported events to predict future outbreaks, hence, by design it cannot predict outbreaks in states with no reported incidents. Moreover, we observe that \fullmodel obtains higher quality scores for most of the months compared to \locationmodel. This is due to its capability of weighting the predictions of difference sources  based on their accuracy for each specific state.
+
+\begin{figure}[h]
+\begin{center}
+	\includegraphics[trim=0 0 0 0, clip,scale=0.5]{fig/quality_timeline.eps}
+\end{center}
+\caption{Timeline of the quality score obtained by BSR, \locationmodel and \fullmodel for predicting Hantavirus outbreaks from January 2013 to March 2014 for Chile, Argentina, Brazil and Uruguay.}
+ \label{fig:quality_timeline}
+\end{figure}
+
+Finally, we analyze the average prediction lead-time of \locationmodel and \fullmodel to examine if the proposed models can detect outbreaks in a timely manner.  
+\Cref{fig:lead_timeline} shows the lead-time timeline of the two models from January 2013 to March 2014. We observe that both models have a significant lead-time advantage when compared against  the mention of the outbreak in news sources.
+
+\begin{figure}[h]
+\begin{center}
+	\includegraphics[trim=0 0 0 0, clip,scale=0.5]{fig/lead_timeline.eps}
+\end{center}
+\caption{Timeline of the lead-time obtained by \locationmodel and \fullmodel for predicting Hantavirus outbreaks from January 2013 to March 2014 for Chile, Argentina, Brazil and Uruguay.}
+ \label{fig:lead_timeline}
+\end{figure}
+
+\subsection{Analyzing Data Sources}
+Next, we examine the accuracy of the data source for the four countries under consideration. The source accuracies are used to determine the confidence of each outbreak prediction and hence are crucial for the performance of \fullmodel. \Cref{fig:src_char} shows the source accuracy histograms for Chile, Argentina, Brazil and Uruguay. As shown, in Uruguay, Argentina and Brazil, most of the sources exhibit high accuracy. On the other hand the majority of news sources for Chile have a low accuracy. The reason is that due to the increased number of hantavirus incidents in Chile, there is a constant flow of related news articles leading to false outbreak predictions for many sources. However, there are several sources that exhibit high accuracy. As shown before, \fullmodel was able to exploit this fact and limit the number of falsely predicted outbreaks.
+
+\begin{figure*}[ht]
+\begin{center}
+        \subfigure{\includegraphics[clip,scale=0.25]{fig/chile_src.eps}  \label{fig:chile_src}}
+        \subfigure{\includegraphics[clip,scale=0.25]{fig/brazil_src.eps} \label{fig:brazil_src}}
+        \subfigure{\includegraphics[clip,scale=0.25]{fig/argentina_src.eps} \label{fig:arg_src}}
+        \subfigure{\includegraphics[clip,scale=0.25]{fig/uruguay_src.eps}  \label{fig:urug_src}}        
+\end{center}
+\caption{Source accuracy histograms for Chile, Brazil, Argentina and Uruguay.}
+\label{fig:src_char}
+\end{figure*}
+
 
 %\begin{figure*}[ht]
 %\begin{center}
@@ -543,7 +571,7 @@ to be added.
 %
 \section{Related Work}
 \label{sec:related_work}
-Much of the work in the topic models literature has focused on identifying either spatial or temporal trends for the discovered topics. To the best of our knowledge most models focus on the temporal or spatial trends in isolation and do not analyze both types of trends jointly. 
+Much of the work in the topic models literature has focused on identifying either spatial or temporal trends for the discovered topics. To the best of our knowledge most models focus on the temporal or spatial trends in isolation and do not analyze both types of trends jointly.  Moreover, none of the models considers the accuracy of different data sources analyzed to predict outbreaks.
 
 A number of methods have been proposed for analyzing the time evolution of topics in document collections, such as the topics over time (TOT) model~\cite{wang:2006}, the dynamic topic model (DTM)~\cite{blei:2006}, and TriMine model~\cite{matsubara:2012}.  More precisely, TOT handles time-windows of fixed size and uses a Beta distribution to model the evolution of a topic over time. DTM  also focuses on a time-window of fixed size but uses Kalman filters to align topics with different time points. Finally, TriMine is able to analyze windows of variate size and unlike TOT and DTM is able to find cyclic time patterns with different timescales, which enables predicting future events. While TOT and DTM focus on the dimension of time alone, TriMine can associate the generation of different modalities with topics, however is agnostic to correlations across the different modalities.
 
@@ -553,6 +581,7 @@ Finally, although previous approaches~\cite{paul:11, sadilek:2012, rider:2013} h
 
 \section{Conclusions}
 \label{sec:conclusion}
+We studied the problem of rare disease outbreak prediction when analyzing dynamic news sources providing an evolving corpus of news articles. We introduced \model, a spatio-temporal topic model that  detects word co-occurence patterns and their corresponding spatio-termporal localization. Moreover, we showed how \model can be integrated with source-based anomaly detection techniques and introduced \fullmodel, a framework for detecting rare disease outbreaks at fine spatial granularity by considering the accuracy of each individual news source. Experimental results show the effectiveness of our proposed framework and illustrate how taking the accuracy of data sources into account leads to higher quality predictions.
 
 \bibliographystyle{abbrv}
 \bibliography{src_tm.bib}
