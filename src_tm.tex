@@ -466,15 +466,15 @@ Finally, we consider the lead time of our predictions, which is calculated as th
 \subsection{Disease Topics Discovery}
 The HealthMap corpus contains mentions to multiple diseases, both common and rare, over multiple countries in Latin America. The most prevalent diseases mentioned in the dataset are avian flu (i.e., type h5n1), dengue fever, swine flu (i.e., h1n1 flu), the hantavirus pulmonary syndrome (HPS) and the hantavirus hemorrhagic fever with renal syndrome (HFRS)~\cite{jonsson:10}. 
 
-While the first three diseases are widespread with a large number of incidences throughout a calendar year, hantavirus syndromes are rather rare with a small number of incidences. Since we are interested in rare-diseases, we focus on outbreaks related to hantaviruses. \Cref{fig:hanta_timeline} illustrates the number of hantavirus related outbreaks from January 2013 to March 2014 across for Chile, Argentina, Brazil and Uruguay. No hantavirus outbreaks were reported to other countries in Latin America. We observe that the number of incidences is rather small with the majority of outbreaks occurring in Chile. Finally, we point out that no seasonal patterns governing the outbreak incidences were observed for each of the aforementioned countries.
+While the first three diseases are widespread with a large number of incidences throughout a calendar year, hantavirus syndromes are rather rare with a small number of incidences. Since we are interested in rare-diseases, we focus on outbreaks related to hantaviruses. As we previously demonstrated in \Cref{fig:hanta_timeline} the number of incidences is rather small with the majority of outbreaks occurring in Chile. Finally, we point out that no seasonal patterns governing the outbreak incidences were observed for each of the aforementioned countries.
 
-\begin{figure}[h]
-\begin{center}
-	\includegraphics[trim=0 0 0 0, clip,scale=0.5]{fig/hanta_outbreaks_timeline.eps}
-\end{center}
-\caption{Timeline of Hantavirus outbreaks from January 2013 to March 2014 for Chile, Argentina, Brazil and Uruguay. No Hantavirus outbreaks were reported for other countries in Latin America.}
- \label{fig:hanta_timeline}
-\end{figure}
+%\begin{figure}[h]
+%\begin{center}
+%	\includegraphics[trim=0 0 0 0, clip,scale=0.5]{fig/hanta_outbreaks_timeline.eps}
+%\end{center}
+%\caption{Timeline of Hantavirus outbreaks from January 2013 to March 2014 for Chile, Argentina, Brazil and Uruguay. No Hantavirus outbreaks were reported for other countries in Latin America.}
+% \label{fig:hanta_timeline}
+%\end{figure}
 
 Next, we evaluate the topics discovered by our topic model. Six out of the twelve topics are related to the diseases mentioned above, while the rest are generic topics related to non-disease aspects of the news articles including administrative information about the reported incidents. Due to space limitations we focus only on the disease related topics. To evaluate the disease topics, we consider a vocabulary of 184 health-related words. For each topic, we examine the most likely words based on the health-related vocabulary and their prominence over time. Given a time points, we define the prominence of a topic as the fraction of articles assigned to that topic over the total number of articles published at that time point.
 
