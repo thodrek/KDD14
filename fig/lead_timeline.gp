@@ -14,5 +14,6 @@ set xtics ("01/13" 1, "02/13" 2, "03/13" 3, "04/13" 4, "05/13" 5, "06/13" 6, "07
 set key out horizontal center bottom
 set autoscale y
 
-plot "lead_timeline.dat" using 1:2 with linespoints pt 6 ps 3 lw 4 lt 1 lc 1 title "LocMine", \
-     "lead_timeline.dat" using 1:3 with linespoints pt 3 ps 3 lw 4 lt 1 lc 0 title "SourceMine"
+plot "lead_timeline.dat" using 1:2 with linespoints pt 7 ps 3 lw 4 lt 1 lc 2 title "KeyWord", \
+     "lead_timeline.dat" using 1:3 with linespoints pt 6 ps 3 lw 4 lt 1 lc 1 title "LocSeer", \
+     "lead_timeline.dat" using 1:4 with linespoints pt 3 ps 3 lw 4 lt 1 lc 0 title "SourceSeer"
