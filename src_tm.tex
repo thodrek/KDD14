@@ -1,7 +1,6 @@
 \documentclass[twoside,leqno,twocolumn]{article}  
 \usepackage{ltexpprt} 
 \usepackage{amssymb,amsmath}
-\usepackage{cleveref}
 \usepackage{algorithm}
 \usepackage{times}
 \usepackage{color}
@@ -11,11 +10,13 @@
 \usepackage[noend]{algorithmic}
 \usepackage{enumerate}
 \usepackage{multirow}
-\usepackage{balance} 
+\usepackage{balance}
+\usepackage{epsfig}
 \usepackage{epstopdf}
 \usepackage[english]{babel}
 \usepackage{graphicx}
 \usepackage{enumitem}
+\usepackage{cleveref}
 %\usepackage{caption}
 %\usepackage{subcaption}
 
@@ -163,9 +164,6 @@ The specific contributions of our approach are:
 \item{\em Forecasting instead of detecting:} \fullmodel is able to forecast outbreaks several days before they occur with a significant {\em lead-time} over reporting in news media. 
 \squishend
 
-The remainder of the paper is organized as follows: (a) we first introduce the problem of rare disease forecasting in the presence of multiple sources (\Cref{sec:problem}), (b) we then present the spatio-temporal topic model component of our framework (\Cref{sec:model}), (c) and the proposed disease prediction model  (\Cref{sec:pred}), (d) followed by an experimental evaluation (\Cref{sec:exp}) of the proposed framework on forecasting hantavirus outbreaks in Latin America. 
-
-
 %\section{Introduction}
 %\label{sec:old_intro}
 %\todo{Lise: intro too long, a lot of details on background and approach. Moreover, redefine STAT and S-STAT more clearly}.
@@ -198,20 +196,18 @@ We assume a continuously updated collection of time-stamped event articles from 
 
 Due to this discretization, any instance of the data collection corresponds to a fixed discretized time window up to time point $T$, and each data entry is associated with a single time point in $\{1, \dots,T\}$. It is convenient to convert this input to a collection of tuples of the form {\em (source, location, word, time point; count)} where the count corresponds to the total number a specific word was mentioned in all articles associated with the source, location and time point in the tuple. For example, a tuple (``www.biobiochile.cl'', (``Los Lagos", ``Chile"), ``hanta", ``28''; 35) means that the word ``hanta" was mentioned 35 times in all articles referring to the state of Los Lagos in Chile over the epi-week 28 provided by source ``www.biobiochile.cl''.  
 
-Given a time point $T$, we partition the data across different sources in $S$ and view each source $s \in S$ as a {\em time-evolving document} consisting of a collection $N_s$ of time-stamped tuples, each associated with a certain {\em latent topic}. Finally, let $\mathcal{X}$ denote the set of all tuple collections $N_s$ for all sources $s \in S$ until time point $T$. Assuming a set of tuple collections $\mathcal{X}$ that get updated with time, our goal is to predict potential disease outbreaks for all locations present in the input data for the future time point $T+1$. Finally, we assume access to a gold-standard report (GSR) providing ground truth information for disease outbreaks at locations in $L$ for time points $t \prec T$. We consider GSR being updated at a much lower rate than that of $\mathcal{X}$ and therefore we can observe significant delays at obtaining ground truth information. Given the assumptions presented above, we decompose this problem into two problems:
-\squishlist
-\item {\bf Topic and Pattern Discovery.} Find the hidden topics that best summarize the input $\mathcal{X}$, their temporal patterns and prominence for each specific location.
-\item {\bf Predicting Disease Outbreaks.} Estimate the future topic focus for each source-location pair, and use each source as an individual expert to forecast disease outbreaks. Sources may exhibit different accuracies that can be learnt comparing their predictions with the GSR.
-\squishend
+Given a time point $T$, we partition the data across different sources in $S$ and view each source $s \in S$ as a {\em time-evolving document} consisting of a collection $N_s$ of time-stamped tuples, each associated with a certain {\em latent topic}. Finally, let $\mathcal{X}$ denote the set of all tuple collections $N_s$ for all sources $s \in S$ until time point $T$. Assuming a set of tuple collections $\mathcal{X}$ that get updated with time, our goal is to predict potential disease outbreaks for all locations present in the input data for the future time point $T+1$. Finally, we assume access to a gold-standard report (GSR) providing ground truth information for disease outbreaks at locations in $L$ for time points $t \prec T$. 
+
 In the next sections, we analyze the two main components of \fullmodel addressing the aforementioned problems.
 
-\section{Spatio-temporal Topic Models}
+\section{Spatio-temporal Topic Model}
 \label{sec:model}
-The first component of \fullmodel deals with the topic and pattern discovery problem.  We introduce a topic model that explicitly models time and location jointly with the word co-occurence patterns over news articles from multiple data sources. We start by reviewing the basic Latent Dirichlet Allocation (LDA) model~\cite{blei:2003}. 
+The first component of \fullmodel deals with the topic and pattern discovery problem.  We introduce a topic model that explicitly models time and location jointly with the word co-occurence patterns over news articles from multiple data sources. So the proposed topic model can be considered as a spatio-temporal extension of the basic Latent Dirichlet Allocation (LDA) model~\cite{blei:2003}.
 
-LDA is a Bayesian network that generates a document using a mixture of topics. In its generative process, for each document $d$, a multinomial distribution $\theta_d$ over topics is randomly sampled from a Dirichlet with parameter $\alpha$, and then to generate each word, a topic $z_{di}$ is chosen from this topic distribution, and a word, $w_{di}$, is generated by randomly sampling from a topic-specific multinomial distribution $\phi_{z_{di}}$. 
+Our proposed spatio-temporal topic model uses location and topic specific distributions to model the generation of words and timestamps. Topic discovery is influenced not only by word co-occurences, but also spatial and temporal information. Our notation is summarized in \Cref{tab:notation}, and the graphical model representation of the model is shown in \Cref{fig:stm_model}.  Next, we describe the model's generative process for the word and time point of each entry corresponding to an observed location.
 
-\vspace{-15pt}\begin{table}[h]
+%\vspace{-15pt}
+\begin{table}[h]
 \small \centering
 \caption{Notation used in this paper.}
 \begin{tabular}{c l}
@@ -235,10 +231,11 @@ $t_{si}$ & Time point of the $i$th entry from source $s$ \\
 \end{tabular}
 \label{tab:notation}
 \end{table}
-\vspace{-5pt}
+%\vspace{-0.5pt}
 
-Our proposed spatio-temporal topic model uses location and topic specific distributions to model the generation of words and timestamps. Topic discovery is influenced not only by word co-occurences, but also spatial and temporal information. Our notation is summarized in \Cref{tab:notation}, and the graphical model representation of the model is shown in \Cref{fig:stm_model}.  Next, we describe the model's generative process for the word and time point of each entry corresponding to an observed location.
 
+%Our proposed spatio-temporal topic model uses location and topic specific distributions to model the generation of words and timestamps. Topic discovery is influenced not only by word co-occurences, but also spatial and temporal information. Our notation is summarized in \Cref{tab:notation}, and the graphical model representation of the model is shown in \Cref{fig:stm_model}.  Next, we describe the model's generative process for the word and time point of each entry corresponding to an observed location.
+\vspace{-10pt}
 \begin{figure}[h]
 \begin{center}
        \includegraphics[trim = 30mm 35mm 70mm 25mm, clip, scale=0.3]{fig/stm_model.eps} \label{fig:stm_model}
@@ -246,6 +243,7 @@ Our proposed spatio-temporal topic model uses location and topic specific distri
 \caption{Plate notation for the proposed spatio-temporal topic model.}
 \vspace{-10pt}
 \label{fig:stm_model}
+\vspace{-5pt}
 
 \end{figure}
 \vspace{-10pt}\ \\{\bf \model generative proceess}
@@ -377,10 +375,10 @@ Given the input described above, the algorithm proceeds in an iterative fashion 
 
 Finally, we associate each outbreak prediction for location $l$ with a {\em confidence score}. Let $S$ be the set of relevant sources for location $l$ and $S_{-1}$ be the subset of sources predicting an outbreak. Moreover, let $a_l(s)$ be the overall {\em accuracy} of a source $s \in S_l$ considering its past predictions for location $l$. The accuracy of source $s$ is defined over the available past time window as $a_l(s) = \frac{\#\mbox{ correct predictions}}{\#\mbox{total prediction}}$ and corresponds to the probability of $s$ giving a correct prediction. Combining the above, the confidence score is: 
 {\small \begin{equation}
-ConfScore = \prod_{s \in S_{-1}}a_l(s) \cdot \prod_{s \in S_l \setminus S_{-1}} (1 - a_l(s))
+\textrm{ConfScore} = \prod_{s \in S_{-1}}a_l(s) \cdot \prod_{s \in S_l \setminus S_{-1}} (1 - a_l(s))
 \label{eq:conf}
 \end{equation}}
-
+\vspace{-1pt}
 \noindent Given the confidence score of each outbreak prediction, one can use a threshold mechanism to select the final outbreak predictions, and balance the trade-off between precision and recall as we discuss in \Cref{sec:exp}. In particular, one can select to report an outbreak prediction only if it is in the $95\%$ confidence interval. Fusing the predictions of individual sources, we predict  {\em if} a disease outbreak will happen during a specific epi week. To predict the exact day of the incidence, we adopt a standard relative date within the epi-week to be the date at which the rare disease incidence will occur, and tune it using cross-validation. 
 
 
@@ -518,7 +516,7 @@ Finally,  \keymodel performs reasonably well when there is an increase in the nu
         \subfigure{\includegraphics[trim=0 0 0 0, clip,scale=0.44]{fig/lead_timeline.eps} \label{fig:lead_timeline}}
 \end{center}
 \caption{(a) F1-score timeline (b) quality score timeline for BSR, \keymodel, \locationmodel and \fullmodel on forecasting hantavirus outbreaks. (c) Lead-time timeline for \locationmodel and \fullmodel on predicting hantavirus outbreaks.}
-\vspace{-10pt}
+\vspace{-15pt}
 \label{fig:perf_timelines}
 \end{figure*}
 
@@ -621,7 +619,7 @@ Finally, although previous approaches~\cite{paul:11, sadilek:2012, rider:2013} h
 \label{sec:conclusion}
 We studied the problem of rare disease outbreak prediction when analyzing dynamic news sources providing an evolving corpus of news articles. We introduced \fullmodel, a framework that combines spatio-temporal topic models with source-based anomaly detection techniques for forecasting rare disease outbreaks at fine spatial granularity by considering the accuracy of each individual news source. Experimental results show the effectiveness of our proposed framework and illustrate how taking the accuracy of data sources into account leads to higher quality predictions.
 
-\begin{thebibliography}{10}
+\begin{thebibliography}{9}
 
 \bibitem{probmed}
 International society for infectious diseases.
