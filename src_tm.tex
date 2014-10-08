@@ -206,11 +206,10 @@ Due to this discretization, any instance of the data collection corresponds to a
 
 Given a time point $T$, we partition the data across different sources in $S$ and view each source $s \in S$ as a {\em time-evolving document} consisting of a collection $N_s$ of time-stamped tuples, each associated with a certain {\em latent topic}. Finally, let $\mathcal{X}$ denote the set of all tuple collections $N_s$ for all sources $s \in S$ until time point $T$. Assuming a set of tuple collections $\mathcal{X}$ that get updated with time, our goal is to predict potential disease outbreaks for all locations present in the input data for the future time point $T+1$. Finally, we assume access to a gold-standard report (GSR) providing ground truth information for disease outbreaks at locations in $L$ for time points $t \prec T$. 
 
-In the next sections, we analyze the two main components of \fullmodel addressing the aforementioned problems.
 \vspace{-10pt}
 \section{Spatio-temporal Topic Models}
 \label{sec:model}
-The first component of \fullmodel deals with the topic and pattern discovery problem.  We introduce a topic model that explicitly models time and location jointly with the word co-occurence patterns over news articles from multiple data sources. So the proposed topic model can be considered as a spatio-temporal extension of the basic Latent Dirichlet Allocation (LDA) model~\cite{blei:2003}.
+The first component of \fullmodel deals with the topic and pattern discovery problem.  We introduce a topic model that explicitly models time and location, jointly with the word co-occurence patterns over news articles from multiple data sources. This is done by incorporating both spatial and temporal component into the basic Latent Dirichlet Allocation (LDA) framework~\cite{blei:2003}.
 
 Our proposed spatio-temporal topic model uses location and topic specific distributions to model the generation of words and timestamps. Topic discovery is influenced not only by word co-occurences, but also spatial and temporal information. Our notation is summarized in \Cref{tab:notation}, and the graphical model representation of the model is shown in \Cref{fig:stm_model}.  Next, we describe the model's generative process for the word and time point of each entry corresponding to an observed location.
 
@@ -298,6 +297,7 @@ The second component of \fullmodel is responsible for forecasting outbreaks at a
 Detecting an anomaly in the content of source $s$ for location $l$, requires reasoning about the relevance of the source's content to the discovered disease topics. We view this problem as an instantiation of the {\em document classification}~\cite{strehl:2000} problem and show how the relevance between the content of a source and a topic can be measured using {\em cosine similarity}.
 
 For each topic $z \in K$, we have a distribution $\phi_z$ over all words in the vocabulary $V$. Following a similar approach to Matsubara et al.~\cite{matsubara:2012}, we extract the average occurrence rate $\bar{x}_w$ for each word $w \in V$ across all entries and construct an {\em average representative document} for each topic $z \in Z$, characterized by a vector $F_z$ that contains the expected occurrence frequency of each word $w \in V$ given the topic. We define the $w$-th entry of $F_z$ corresponding to word $w$ as $F_z,w = \bar{x}_w \cdot \phi_{z,w}$. Similarly, given a source $s$,  a location $l$ and a time point $t$, the content of a source is described with a word frequency vector $F_{s,l,t}$. Given the vectors $F_z$ and $F_{s,l,t}$ we define the relevance of the content of source $s$ for location $l$ at time $t$ to topic $z$ as:
+
 {\small \begin{equation}
 {\sf Relevance}(s,z;l,t) = {\sf CosineSimilarity}(F_{s,l,t},F_z)
 \end{equation}}\vspace{-10pt}
@@ -305,9 +305,10 @@ For each topic $z \in K$, we have a distribution $\phi_z$ over all words in the 
 where the cosine similarity of two vectors $A$ and $B$ is:
 {\small \begin{equation}
 {\sf CosineSimilarity}(A,B) = (A \cdot B)/(\|A\| \|B\|)
-\end{equation}}\vspace{-10pt}
-
-However, we want to predict disease outbreaks at future time points when the content of each source is not available to us. Therefore, given a source $s$, a location $l$ and a future time point $t$, we estimate the entries of $F_{s,l,t}$ considering the expected frequency of each word. Let $\hat{F}_{s,l,t}[w]$ denote the expected frequency for word 
+\end{equation}}
+\vspace{-10pt}
+ 
+We want to predict disease outbreaks at future time points when the content of each source is not available to us. Therefore, given a source $s$, a location $l$ and a future time point $t$, we estimate the entries of $F_{s,l,t}$ considering the expected frequency of each word. Let $\hat{F}_{s,l,t}[w]$ denote the expected frequency for word 
 $w \in V$. To compute the expected frequency $\hat{F}_{s,l,t}[w]$, we need to consider the conditional probability of source $s$ mentioning word $w$ at a future time point $t$, denoted by $\Pr(t|s,w)$, the conditional probability of source $s$ publishing word $w$ in an article related to the location $l$, denoted by $\Pr(w|s,l)$, and 
 the probability of word $w$ being generated by any topic $z \in K$, given location $l$ and time point $t$. 
 We have that:
@@ -338,15 +339,15 @@ mentioning a particular word $w$ at a future time $t$ by considering the weighte
 
 \noindent where $I(s,\tau,w)$ is an indicator variable equal to one if source $s$ mentioned word $w$ at least once at time $\tau$, and zero otherwise. 
 To estimate the probability $\xi_{z,t} \mbox{ with } z \in \{1, 2, \dots, K\}$, 
-we use the values of distribution $\xi_{z}, \forall z \in K$ corresponding to past time points. In particular, we use an autoregressive model over the values of topic $z$ for the $n$ previous time intervals, denoted by $\xi_{z,t-1},\xi_{z,t-2},\dots,\xi_{z,t-N}$:
+we use the values of distribution $\xi_{z}, \forall z \in K$ corresponding to past time points. In particular, we use an autoregressive model over the values of topic $z$ for the $n$ previous time intervals, denoted by $\xi_{z,t-1},\xi_{z,t-2},\dots,\xi_{z,t-n}$:
 {\small \begin{equation}
 \xi_{z,t}=a_1 \cdot \xi_{z,t-1}+a_2\cdot \xi_{z,t-2}+\dots +a_n\cdot \xi_{z,t-n}
 \end{equation}}
 \vspace{-10pt}
 
-\noindent where $a_1,a_2,.....,a_n$ are the regression coefficients.  We compute the source-topic relevance for each source-location and topic combination using the aforementioned techniques.
+\noindent where $a_1,a_2,.....,a_n$ are the regression coefficients. We compute the source-topic relevance for each source-location and topic combination using the aforementioned techniques.
 
-Since rare disease incidences are scarce over time. Therefore, the source-topic relevance values for a rare disease topic will be low for most time points and high only for few time points corresponding to an outbreak. Following this observation, high relevance values for a rare disease topic, can be viewed as anomalous points, and thus, anomaly detection techniques can be used to identify if the source-topic relevance corresponds to an anomalous point.
+Since rare disease incidences are scarce over time, the source-topic relevance values for a rare disease topic will be low for most time points and high only for few time points corresponding to an outbreak or an anomalous point. Thus anomaly detection techniques can be used to detect an anomalous point corresponding to a disease outbreak.
 
 We use one-class SVMs~\cite{schoelkopf:99} (OCSVM) to classify the source-topic relevance values as anomalous or not. OCSVMs have successfully been used in a variety of anomaly detection tasks~\cite{manevitz:2002,steinwart:05, heller:03}. Furthermore, OCSVMs present superior performance compared to other anomaly detection techniques, such as Nearest Neighbor classification, in scenarios where a small number of anomalous example is available~\cite{khan:13}. Finally, OCSVMs do not make any assumptions on the distribution of the data points.
 
@@ -360,7 +361,10 @@ Our final goal is to forecast the incidence of a particular disease for a specif
 
 Given time $t$ in the future, we focus on a location $l$ and view each source $s \in S$ as an expert providing a prediction $d_s \in [-1,1]$ with the value $-1$ corresponding to the emergence of an outbreak and $1$ otherwise. We assign a weight $w_s$ to each source, and given the predictions of all sources, we predict yes/no for an outbreak at location $l$ by taking the majority vote $\sum_{s \in S} w_s \cdot d_s$.  We learn weights $w_s$ using the multiplicative weights algorithm shown in Alg. \ref{algo:mw}.
 
+\vspace{-10pt}
 \begin{algorithm}[h]
+\centering
+\captionsetup{font=scriptsize}
 \caption{Multiplicative Weights Update for Sources}
 {\footnotesize \begin{algorithmic}[1]
 \STATE {\bf Input:} $S_l$: set of sources for location $l$; ${\bf D_l}$: training points; $R_{S_l}$: source-topic relevance dictionary for sources in $S_l$ and points in ${\bf D_l}$; $O_{S_l}$: one-class SVMs for $S_l$; $\epsilon$: discount factor
@@ -383,6 +387,7 @@ Given time $t$ in the future, we focus on a location $l$ and view each source $s
 \end{algorithmic}}
 \label{algo:mw}
 \end{algorithm}
+\vspace{-10pt}
 
 Consider a location $l$. To construct the necessary input for the multiplicative weights update algorithm, we: (i) identify the set of sources $S_l$ relevant to location $l$, i.e., sources that have published for location $l$, and (ii) construct the set of training points  ${\bf D_l}$ by considering the reported outbreaks in GSR (\Cref{sec:problem}) for location $l$ and the disease under consideration. We populate ${\bf D_l}$ with tuples of the form $(time point, outbreak)$ for all historical time points up to the latest time point present both in $\mathcal{X}$ and GSR and set the value of $outbreak$ to $-1$ if an actual outbreak was reported and $1$ otherwise. Finally, we use the past source-topic relevance values for the sources in $S_l$ and the training points in ${\bf D_l}$.
 
@@ -436,7 +441,7 @@ Finally, we consider the lead time of our predictions, which is calculated as th
 
 \noindent{\bf Mapping Warnings to Events:} Since there could be multiple events (and/or alerts) in a given month, a strategy is necessary to map events to alerts. We conduct a maximum bipartite matching between events and alerts where (i) an edge exists if the alert was issued prior to the reporting date of the event, (ii) the weight on the edge denotes the quality score. 
 \vspace{-10pt}
-\subsection{Disease Topics Discovery} \textbf{{\em How effective is the proposed topic model in identifying disease topics and their temporal patterns?}} The HealthMap corpus contains mentions to both common and rare diseases over multiple countries in Latin America. The most prevalent diseases mentioned in the dataset are avian flu (i.e., type h5n1), dengue fever, swine flu (i.e., h1n1 flu), the hantavirus pulmonary syndrome (HPS) and the hantavirus hemorrhagic fever with renal syndrome (HFRS)~\cite{jonsson:10}. 
+\subsection{Disease Topics Discovery} \textbf{{\em How effective is the proposed topic model in discovering disease topics?}} The HealthMap corpus contains mentions to both common and rare diseases over multiple countries in Latin America. The most prevalent diseases mentioned in the dataset are avian flu (i.e., type h5n1), dengue fever, swine flu (i.e., h1n1 flu), the hantavirus pulmonary syndrome (HPS) and the hantavirus hemorrhagic fever with renal syndrome (HFRS)~\cite{jonsson:10}. 
 
 
 
@@ -450,11 +455,11 @@ While the first three diseases are widespread with a large number of incidences,
 % \label{fig:hanta_timeline}
 %\end{figure}
 
-We evaluate the topics discovered by our topic model. Six out of the twelve topics are related to the diseases mentioned above, while the rest are background topics related to non-disease aspects of the news articles. We focus only on the disease related topics. To evaluate the disease topics, we consider a vocabulary of 184 health-related words. For each topic, we examine the most likely words based on the health-related vocabulary and their prominence over time. Given a time point, we define the prominence of a topic as the fraction of articles of that topic over the total number of articles published at that time point.
+We evaluate the topics discovered by our topic model. Six out of the twelve topics are related to the diseases mentioned above, while the rest are background topics related to non-disease aspects of the news articles. We focus only on the disease related topics. To evaluate the disease topics, we consider a vocabulary of 184 health-related words. For each topic, we examine the most likely words based on the health-related vocabulary and their corresponding probabilities in disease topics.
 \begin{table}[t]
 \scriptsize \centering
 \captionsetup{font=scriptsize}
-\caption{Three discovered topics that are related to hantavirus. The first two topics are related to the two different hantavirus syndromes (i.e., HPS and HFRS) and the third topic is related to generic information about the  transmission of the virus. Histograms show the topic prominence over time; The top words with their probability in each topic are shown.}
+\caption{Three discovered topics that are related to hantavirus. The top words with their probability in each topic are shown.}
 \begin{tabular}{|lr|lr|lr|}
 \hline
 \multicolumn{2}{|c|}{\bf HPS} & \multicolumn{2}{|c|}{\bf HFRS} &
@@ -477,8 +482,8 @@ cardiopulmonar & 0.0002 & renal & 0.0005 & roedores & 0.0022 \\
 \vspace{-10pt}
 \end{table}
 
-\Cref{tab:hanta_topics} shows three topics related to hantavirus, their most likely words based on the health-related vocabulary and their prominence histograms over time. 
-The first topic refers to the HPS syndrome with words such as ``pneumonia", ``sangre" (blood), and ``cardiopulmonar" being ranked higher. We see that the proposed topic model is able to retrieve the correlation between words ``hanta" and ``ratones" (mice) successfully. The second topic focuses on the HFRS syndrome with words as  ``nariz" (nose), ``estornudar" (sneeze), ``renal" being more prevalent. Finally, the third topic focuses on the hantavirus transmission routes with words as ``lixo" (garbage), ``criaderos" (breeding places), ``manos" (hands) and ``roedores" (rodents) being ranked higher than others. According to Jonsson et al.~\cite{jonsson:10} HPS is the main syndrome observed in the Americas while HFRS cases are mainly observed in Eurasia. Thus, observing a topic focusing on HFRS for Latin America seems unexpected. However, after analyzing the actual articles in our corpus, we found that articles reporting hantavirus incidents usually mention both forms of hantavirus syndromes for informational purposes. Focusing on the prominence histograms, we see that the HFRS and Hanta transmission topics show small fluctuations across the different time points. However, we observe that the HPS topic follows a trend similar to that of the hantavirus incidence time line. More precisely, we see that the prominence of this topics peaks towards the end of May 2013 and from December 2013 to March 2014 exactly during the months when the number of hantavirus incidences increases. Similar results were observed for topics related to common diseases. The full evaluation is provided in \Cref{sec:common_topics}. Finally, in \Cref{sec:spatial}, we present evidence that the proposed topic model is effecting in identifying disease spatial patterns.
+\Cref{tab:hanta_topics} shows three topics related to hantavirus and their most likely words based on the health-related vocabulary. 
+The first topic refers to the HPS syndrome with words such as ``pneumonia", ``sangre" (blood), and ``cardiopulmonar" being ranked higher. We see that the proposed topic model is able to retrieve the correlation between words ``hanta" and ``ratones" (mice) successfully. The second topic focuses on the HFRS syndrome with words as  ``nariz" (nose), ``estornudar" (sneeze), ``renal" being more prevalent. Finally, the third topic focuses on the hantavirus transmission routes with words as ``lixo" (garbage), ``criaderos" (breeding places), ``manos" (hands) and ``roedores" (rodents) being ranked higher than others. According to Jonsson et al.~\cite{jonsson:10} HPS is the main syndrome observed in the Americas while HFRS cases are mainly observed in Eurasia. Thus, observing a topic focusing on HFRS for Latin America seems unexpected. However, after analyzing the actual articles in our corpus, we found that articles reporting hantavirus incidents usually mention both forms of hantavirus syndromes for informational purposes. Finally, in \Cref{sec:spatial}, we present evidence that the proposed topic model is effective in detecting disease temporal patterns.
 
 %\begin{table*}
 %\scriptsize \centering
@@ -526,6 +531,22 @@ The first topic refers to the HPS syndrome with words such as ``pneumonia", ``sa
 %  \label{tab:results}
 %\end{table*}
 \vspace{-10pt}
+\subsection{How effective is the proposed topic model in identifying spatial patterns?} 
+\label{sec:spatial}
+We examine the correlations between the discovered topics and the countries in Latin America under consideration. \Cref{fig:country_topic} shows the prominence of each topic for Brazil, Chile, Uruguay and Argentina. As expected, we observe that in Chile, HPS and HFRS are more prominent compared to other countries, while in Brazil Dengue topic is prominent as Brazil is prone to dengue outbreaks throughout the year.
+
+\vspace{-10pt}
+\begin{figure}[h]
+\captionsetup{font=scriptsize}
+\begin{center}
+	\includegraphics[trim=5 0 10 10, clip,scale=0.6]{fig/country_topic.eps}
+\end{center}
+ \vspace{-10pt}
+\caption{The country specific topic prominence for different diseases. The numbers reported are averaged over all states corresponding to each country.}
+ \label{fig:country_topic}
+ \vspace{-10pt}
+\end{figure}
+
 \subsection{Forecasting Disease Outbreaks} \textbf{{\em How accurately can {\sf {\bf SourceSeer}} forecast disease outbreaks?}} We evaluate the performance of the various disease outbreak forecasting algorithms focusing on hantavirus incidences at the country level considering the predicted outbreaks for Argentina, Chile, Uruguay and Brazil.  We apply BSR,  \keymodel, \fullmodel and \locationmodel. We evaluate the performance of \fullmodel and \locationmodel with $k \in \{5,10,20,30,40,50,70\}$. We use the three hantavirus topics described above to construct the necessary feature vectors for \fullmodel and \locationmodel.  \Cref{fig:f1_timeline} shows the F1 score  of the four approaches from January 2013 to March 2014 aggregated over all countries. A detailed evaluation on the precision, recall and F1 score is provided in \Cref{sec:full_eval}.
 
 As shown, \fullmodel  obtains the best F1-score for most of the months. The F1 score of BSR is lower as its recall is significantly lower compared to that of \fullmodel. The latter is expected as BSR can only predict outbreaks for states where a sufficient number of outbreaks has occurred in the past. In fact, due to its design BSR fails completely to forecast outbreaks for states or countries where no outbreaks have been observed in the past (e.g., the outbreak in Brazil for October 2013 and the outbreak in Uruguay for March 2013).  However this mechanism limits the number of false positives significantly, and thus, for many months we observe slightly higher or comparable precision scores for BSR with those of \fullmodel (see \Cref{sec:full_eval}). The F1 score of \locationmodel is significantly lower compared to \fullmodel due to its significantly lower precision scores. The reason for this behavior is the increased number of false positives returned by \locationmodel even after the thresholding mechanism was employed. 
@@ -548,7 +569,7 @@ Finally,  \keymodel performs reasonably well when there is an increase in the nu
 \end{figure*}
 
 
-\noindent\textbf{{\em Is the performance gain of {\sf {\bf SourceSeer}}} significant?} To obtain a clearer understanding of \fullmodel's performance gain, we perform the Wilcoxon signed-rank~\cite{Wilcoxon45} test comparing the performance of  BSR with \fullmodel,  \keymodel with \fullmodel and \locationmodel with \fullmodel for precision, recall, and F1-score across all months. The Wilcoxon signed-rank test is a non-parametric statistical hypothesis test used to assess whether the performance differences between two algorithms are statistically significant. In table \Cref{tab:significance} we report the corresponding test statistic scores $W$ and the $z$-scores. We consider a baseline confidence level of $\alpha = .05$. As shown, the performance difference between BSR and \fullmodel is statistically significant for recall and F1 (with \fullmodel outperforming BSR) while the difference for precision is not statistically significant. The exact same behavior was observed for \keymodel and \fullmodel. For \locationmodel and \fullmodel, we see that the performance gain of \fullmodel for precision and F1 is statistically significant while the difference for recall is not. We did not observe significant differences in the performance of \locationmodel and \fullmodel for different threshold values for $k$. 
+\noindent\textbf{{\em Is the performance gain of {\sf {\bf SourceSeer}}} significant?} To obtain a clearer understanding of \fullmodel's performance gain, we perform the Wilcoxon signed-rank~\cite{Wilcoxon45} test comparing the performance of  BSR with \fullmodel,  \keymodel with \fullmodel and \locationmodel with \fullmodel for precision, recall, and F1-score across all months. In table \Cref{tab:significance} we report the corresponding test statistic scores $W$ and the $z$-scores. We consider a baseline confidence level of $\alpha = .05$. As shown, the performance difference between BSR and \fullmodel is statistically significant for recall and F1 (with \fullmodel outperforming BSR) while the difference for precision is not statistically significant. The exact same behavior was observed for \keymodel and \fullmodel. For \locationmodel and \fullmodel, we see that the performance gain of \fullmodel for precision and F1 is statistically significant while the difference for recall is not. We did not observe significant differences in the performance of \locationmodel and \fullmodel for different threshold values for $k$. 
 
 We further analyze the performance of the four models by comparing the quality score cross all months under consideration. \Cref{fig:quality_timeline} shows the average prediction quality score obtained by each model from January 2013 to March 2014. A higher quality score is an indicator that a model can predict outbreaks correctly at the state and not only at the country level. As shown, both \locationmodel and \fullmodel outperform BSR and \keymodel significantly. This is expected since BSR relies only on past reported events to predict future outbreaks and \keymodel on increased keyword counts, hence, by design both cannot predict outbreaks in states with no reported incidents. Moreover, we observe that \fullmodel obtains higher quality scores for most of the months compared to \locationmodel. This is due to its capability of weighting the predictions of difference sources  based on their accuracy for each specific state.
 
@@ -640,7 +661,7 @@ Much of the work in the topic models literature has focused on identifying eithe
 % \vspace{-15pt}
 %\end{figure}
 
-A number of methods have been proposed for analyzing the time evolution of topics in document collections, such as the topics over time (TOT) model~\cite{wang:2006}, the dynamic topic model (DTM)~\cite{blei:2006}, and TriMine model~\cite{matsubara:2012}.  More precisely, TOT handles time-windows of fixed size and uses a Beta distribution to model the evolution of a topic over time. DTM  also focuses on a time-window of fixed size but uses Kalman filters to align topics with different time points. Finally, TriMine is able to analyze windows of variate size and unlike TOT and DTM is able to find cyclic time patterns with different timescales, which enables predicting future events. While TOT and DTM focus on the dimension of time alone, TriMine can associate the generation of different modalities with topics, however is agnostic to correlations across the different modalities.
+A number of methods have been proposed for analyzing the time evolution of topics in document collections, such as the topics over time (TOT) model~\cite{wang:2006}, the dynamic topic model (DTM)~\cite{blei:2006}, and TriMine model~\cite{matsubara:2012}.  More precisely, TOT handles time-windows of fixed size and uses a Beta distribution to model the evolution of a topic over time. DTM  also focuses on a time-window of fixed size but uses Kalman filters to align topics with different time points. Finally, TriMine is able to analyze windows of variate size and unlike TOT and DTM is able to find cyclic time patterns with different timescales, which enables predicting future events.
 
 A different line of work~\cite{wang:2007} focuses on discovering spatial patterns jointly with the word co-occurrences. In particular, the authors introduced the Spatial Latent Dirichlet Allocation (SLDA), which better encodes spatial structure among words. While the model focuses on computer vision applications where documents are comprised by visual words the proposed techniques can be trivially extended to regular text documents. A similar approach was introduced by Ramage et al.~\cite{ramage:2009} for labeled documents where the labels can correspond to multiple modalities, i.e., locations as well.
 
@@ -872,15 +893,15 @@ where $-si$ in the superscript indicates that the current example has been exclu
 \section{Topic Model Evaluation for Common Diseases}
 \label{sec:common_topics}
 
-\begin{table*}[t]
+\begin{table}[t]
 \scriptsize
 \begin{center}
 \captionsetup{font=scriptsize}
-\caption{Three discovered topics that are related to Influenza (Avian Flu), dengue and Swine Flu. Histograms show the topic prominence over time; The top words with their probability in each topic are shown.}
+\caption{Three discovered topics that are related to Influenza (Avian Flu), dengue and Swine Flu. The top words with their probability in each topic are shown.}
 \begin{tabular}{|lr|lr|lr|}
 \hline
-\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_influenza_timeline.eps}} & \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_dengue_timeline.eps}}& 
-\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_swine_timeline.eps}} \\ \hline
+%\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_influenza_timeline.eps}} & \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_dengue_timeline.eps}}& 
+%\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_swine_timeline.eps}} \\ \hline
 influenza & 0.0567 & dengue & 0.2095 & gripe & 0.0522 \\
 mosquito & 0.0495 & aegypti & 0.0166 & h1n1 & 0.0351 \\
 pacientes & 0.0258 & agua & 0.0137  & infectadas &0.0043 \\
@@ -894,23 +915,35 @@ h5n1 & 0.0003 & suero & 0.0004 & swine & 0.0005 \\
 \hline
 \end{tabular}\label{tab:common_topics}
 \end{center}
+\end{table}
+
+We evaluate the performance of the proposed topic model at discovering common disease topics. \Cref{tab:common_topics} shows three topics related to avian flu, dengue and swine flu. Again, we present their most likely words and their corresponding topic probabilities. For all three topics we see that the corresponding disease keywords, i.e., ``influenza",  ``dengue" and ``gripe" (flu) are ranked first. For the avian influenza topic, the proposed topic model is able to discover the correlation among words referring to both the {\em causes}, i.e., ``mosquito", ``larvas", ``zancudos" (mosquitos), and the {\em symptoms}, i.e., ``fiebre" (fever), of the disease. Regarding the dengue topic, our approach is able to identify the main transmission root of dengue which is via the aides aegypti mosquito, as well as, the fact that dengue is more prominent in rural and agricultural areas. Finally, a similar performance is observed for the swine flu topic. Our approach can identify the correlation between the word ``bacteria" and swine flu - bacteria co-infections play a key role in swine flu deaths - and the correlation between ``paracetamol" and swine flu, one of indicated medication substances for the disease.
+
+\section{How effective is the proposed topic model in identifying temporal patterns?} 
+\label{sec:temporal}
+In this section we examine the temporal patterns of each disease topic. \Cref{tab:topics_timelines} shows 
+the topic prominence over time for all the disease topics. Given a time point, we define
+the prominence of a topic as the temporal distribution value for that topic at that timepoint.
+
+Focusing on the prominence histograms in \Cref{tab:topics_timelines} we see that the HFRS and Hanta transmission topics
+show small fluctuations across the different time points. However, we observe that the HPS topic follow a trend similar to that
+of the hantavirus incidence timeline. More precisely, we see that the prominence of this topics peaks towards the end of May 2013 and
+from December 2013 to March 2014 exactly during the months when the number of hantavirus incidences increases.
+Similar results were observed for topics related to common diseases.
+
+\begin{table*}[t]
+\scriptsize \centering
+\captionsetup{font=scriptsize}
+\caption{Histograms show the topic prominence over time for all the disease topics}
+\begin{tabular}{|lr|lr|lr|}
+\hline
+\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.4]{fig/topic_hanta_timeline.eps}} & \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.4]{fig/topic_hanta3_timeline.eps}}& 
+\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.4]{fig/topic_hanta2_timeline.eps}} \\ \hline
+\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_influenza_timeline.eps}} & \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_dengue_timeline.eps}}& \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_swine_timeline.eps}} \\ \hline
+\end{tabular}
+\label{tab:topics_timelines}
+\vspace{-10pt}
 \end{table*}
-
-We evaluate the performance of the proposed topic model at discovering common disease topics and their temporal patterns. \Cref{tab:common_topics} shows three topics related to avian flu, dengue and swine flu. Again, we present their most likely words and their prominence histograms over time. For all three topics we see that the corresponding disease keywords, i.e., ``influenza",  ``dengue" and ``gripe" (flu) are ranked first. For the avian influenza topic, the proposed topic model is able to discover the correlation among words referring to both the {\em causes}, i.e., ``mosquito", ``larvas", ``zancudos" (mosquitos), and the {\em symptoms}, i.e., ``fiebre" (fever), of the disease. Regarding the dengue topic, our approach is able to identify the main transmission root of dengue which is via the aides aegypti mosquito, as well as, the fact that dengue is more prominent in rural and agricultural areas. Finally, a similar performance is observed for the swine flu topic. Our approach can identify the correlation between the word ``bacteria" and swine flu - bacteria co-infections play a key role in swine flu deaths - and the correlation between ``paracetamol" and swine flu, one of indicated medication substances for the disease.
-
-\section{How effective is the proposed topic model in identifying spatial patterns?} 
-\label{sec:spatial}
-We examine the correlations between the discovered topics and the countries in Latin America under consideration. \Cref{fig:country_topic} shows the prominence of each topic for Brazil, Chile, Uruguay and Argentina. As expected, we observe that in Chile, HPS and HFRS are more prominent compared to other countries.
-
-\begin{figure}[h]
-\begin{center}
-	\includegraphics[trim=5 0 10 10, clip,scale=0.6]{fig/country_topic.eps}
-\end{center}
- \vspace{-10pt}
-\caption{The country specific topic prominence for different diseases. The numbers reported are averaged over all states corresponding to each country.}
- \label{fig:country_topic}
- \vspace{-10pt}
-\end{figure}
 
 
 \section{ Evaluation of Different Prediction Approaches}
@@ -927,6 +960,7 @@ In this section, we present the detailed evaluation results for the performance 
     \multicolumn{3}{c|}{{\bf \keymodel}} &
     \multicolumn{3}{c|}{{\bf \locationmodel(5\%)}} &
     \multicolumn{3}{c|}{{\bf \fullmodel(5\%)}} \\
+    \hline
     \cline{2-10} {\em Month}   & {\em Prec.} & {\em Rec.} & {\em F1} & {\em Prec.} & {\em Rec.} & {\em F1} & {\em Prec.} & {\em Rec.} & {\em F1} & {\em Prec.} & {\em Rec.} & {\em F1} \\
     \hline 
     01/13 & 0.5 & 0.17 & 0.25 & {\bf 0.67}& 0.33& 0.44& 0.13 & {\bf 0.67} & 0.22 & 0.44 & {\bf 0.67} & {\bf 0.53}\\ 
