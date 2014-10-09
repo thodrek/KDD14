@@ -347,7 +347,11 @@ we use the values of distribution $\xi_{z}, \forall z \in K$ corresponding to pa
 
 \noindent where $a_1,a_2,.....,a_n$ are the regression coefficients. We compute the source-topic relevance for each source-location and topic combination using the aforementioned techniques.
 
-Since rare disease incidences are scarce over time, the source-topic relevance values for a rare disease topic will be low for most time points and high only for few time points corresponding to an outbreak or an anomalous point. Thus anomaly detection techniques can be used to detect an anomalous point corresponding to a disease outbreak.
+Since rare disease incidences are scarce over time, the source-topic
+relevance values for a rare disease topic will be low for most time
+points and high only for few time points corresponding to an outbreak.
+Following this observation, high relevance values for a rare disease
+topic, can be viewed as anomalous points, and thus, thus anomaly detection techniques can be used to detect an anomalous point corresponding to a disease outbreak.
 
 We use one-class SVMs~\cite{schoelkopf:99} (OCSVM) to classify the source-topic relevance values as anomalous or not. OCSVMs have successfully been used in a variety of anomaly detection tasks~\cite{manevitz:2002,steinwart:05, heller:03}. Furthermore, OCSVMs present superior performance compared to other anomaly detection techniques, such as Nearest Neighbor classification, in scenarios where a small number of anomalous example is available~\cite{khan:13}. Finally, OCSVMs do not make any assumptions on the distribution of the data points.
 
