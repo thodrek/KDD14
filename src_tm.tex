@@ -417,7 +417,7 @@ When predicting for an epi-week $t$ we use historical (weekly) data from June 20
 \noindent{\bf GSR:} We make use of a gold standard report (GSR) which
 gives ground truth determinations of whether a disease incidence
 (hantavirus) happened in a given location. The GSR is determined by
-analysts of MITRE considering multiple news sources and studying bulletins issued by health reporting organizations such as ProMED~\cite{probmed}.
+analysts of MITRE~\footnote{The Mitre Corporation is a not-for-profit company that operates multiple federally funded research and development centers} considering multiple news sources and studying bulletins issued by health reporting organizations such as ProMED~\cite{probmed}.
 
 \noindent{\bf Models:} We evaluate the following models:
 \squishlist
@@ -569,7 +569,7 @@ Finally,  \keymodel performs reasonably well when there is an increase in the nu
 \end{figure*}
 
 
-\noindent\textbf{{\em Is the performance gain of {\sf {\bf SourceSeer}}} significant?} To obtain a clearer understanding of \fullmodel's performance gain, we perform the Wilcoxon signed-rank~\cite{Wilcoxon45} test comparing the performance of  BSR with \fullmodel,  \keymodel with \fullmodel and \locationmodel with \fullmodel for precision, recall, and F1-score across all months. In table \Cref{tab:significance} we report the corresponding test statistic scores $W$ and the $z$-scores. We consider a baseline confidence level of $\alpha = .05$. As shown, the performance difference between BSR and \fullmodel is statistically significant for recall and F1 (with \fullmodel outperforming BSR) while the difference for precision is not statistically significant. The exact same behavior was observed for \keymodel and \fullmodel. For \locationmodel and \fullmodel, we see that the performance gain of \fullmodel for precision and F1 is statistically significant while the difference for recall is not. We did not observe significant differences in the performance of \locationmodel and \fullmodel for different threshold values for $k$. 
+\noindent\textbf{{\em Is the performance gain of {\sf {\bf SourceSeer}}} significant?} To obtain a clearer understanding of \fullmodel's performance gain, we perform the Wilcoxon signed-rank~\cite{Wilcoxon45} test comparing the performance of  BSR with \fullmodel,  \keymodel with \fullmodel and \locationmodel with \fullmodel for precision, recall, and F1-score across all months. In \Cref{tab:significance} we report the corresponding test statistic scores $W$ and the $z$-scores. We consider a baseline confidence level of $\alpha = .05$. As shown, the performance difference between BSR and \fullmodel is statistically significant for recall and F1 (with \fullmodel outperforming BSR) while the difference for precision is not statistically significant. The exact same behavior was observed for \keymodel and \fullmodel. For \locationmodel and \fullmodel, we see that the performance gain of \fullmodel for precision and F1 is statistically significant while the difference for recall is not. We did not observe significant differences in the performance of \locationmodel and \fullmodel for different threshold values for $k$. 
 
 We further analyze the performance of the four models by comparing the quality score cross all months under consideration. \Cref{fig:quality_timeline} shows the average prediction quality score obtained by each model from January 2013 to March 2014. A higher quality score is an indicator that a model can predict outbreaks correctly at the state and not only at the country level. As shown, both \locationmodel and \fullmodel outperform BSR and \keymodel significantly. This is expected since BSR relies only on past reported events to predict future outbreaks and \keymodel on increased keyword counts, hence, by design both cannot predict outbreaks in states with no reported incidents. Moreover, we observe that \fullmodel obtains higher quality scores for most of the months compared to \locationmodel. This is due to its capability of weighting the predictions of difference sources  based on their accuracy for each specific state.
 
@@ -900,8 +900,8 @@ where $-si$ in the superscript indicates that the current example has been exclu
 \caption{Three discovered topics that are related to Influenza (Avian Flu), dengue and Swine Flu. The top words with their probability in each topic are shown.}
 \begin{tabular}{|lr|lr|lr|}
 \hline
-%\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_influenza_timeline.eps}} & \multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_dengue_timeline.eps}}& 
-%\multicolumn{2}{|c|}{\includegraphics[clip,scale=0.45]{fig/topic_swine_timeline.eps}} \\ \hline
+\multicolumn{2}{|c|}{\bf Avian Influenza} & \multicolumn{2}{|c|}{\bf Dengue} & 
+\multicolumn{2}{|c|}{\bf Swine Flu} \\ \hline 
 influenza & 0.0567 & dengue & 0.2095 & gripe & 0.0522 \\
 mosquito & 0.0495 & aegypti & 0.0166 & h1n1 & 0.0351 \\
 pacientes & 0.0258 & agua & 0.0137  & infectadas &0.0043 \\
