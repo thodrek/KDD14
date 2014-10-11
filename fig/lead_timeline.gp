@@ -15,5 +15,5 @@ set key out horizontal center bottom
 set autoscale y
 
 plot "lead_timeline.dat" using 1:2 with linespoints pt 7 ps 3 lw 4 lt 1 lc 2 title "KeyWord", \
-     "lead_timeline.dat" using 1:3 with linespoints pt 6 ps 3 lw 4 lt 1 lc 1 title "LocSeer", \
-     "lead_timeline.dat" using 1:4 with linespoints pt 3 ps 3 lw 4 lt 1 lc 0 title "SourceSeer"
+     "lead_timeline.dat" using 1:3 with linespoints pt 3 ps 3 lw 4 lt 1 lc 0 title "LocSeer", \
+     "lead_timeline.dat" using 1:4 with linespoints pt 14 ps 3 lw 4 lt 1 lc 3 title "SourceSeer"

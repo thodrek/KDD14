@@ -9,6 +9,6 @@ set title "{/Helvetica-Bold Topic Prominence per Country"
 set ylabel  "Prominence"
 set xlabel "Topic"
 set datafile missing "-"
-set xtic rotate font ",22" out
+set xtic rotate by -45 font ",22" out
 
 plot for [COL=2:5] "country_topic.dat" using COL:xticlabels(1) title columnheader
